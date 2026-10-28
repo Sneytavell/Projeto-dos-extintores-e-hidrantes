@@ -303,3 +303,4 @@ Nova aba "Cronograma" (todos veem; só admin cria/atribui):
 - (v44) Erro de conexão com o Firebase mostra a causa provável (login Anônimo desativado, apiKey, rede) e o código do erro.
 - (v45) Site: a caixa "Primeira configuração" (criar administrador) só aparece pelo link com ?configurar e enquanto não houver administrador; no login normal ficam só matrícula/PIN, Primeiro acesso (pedido aprovado pelo administrador) e Visitante.
 - (v46) Primeiro acesso: sem escolha de função (o administrador define função e perfil ao aprovar); no site sem a opção de vincular conta Claude.
+- (v47) Login/Primeiro acesso: mensagem de erro legível (vermelho claro) e com a causa (regras do Firestore não publicadas, banco não criado, sem internet) e o código.

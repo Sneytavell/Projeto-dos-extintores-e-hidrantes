@@ -271,7 +271,7 @@ td.nowrap{white-space:nowrap}
 .f-resumo{width:100%;font-size:12.5px;color:var(--muted);padding:2px 2px 4px}
 .lg-sep{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}.lg-sep::before,.lg-sep::after{content:"";flex:1;border-top:1px solid var(--border)}
 .lg-rapido{display:flex;flex-direction:column;gap:8px}.lg-rapido .btn{justify-content:flex-start;gap:10px;width:100%}
-.lg-erro{color:var(--crit-text,var(--accent));font-size:13px;min-height:1em}
+.lg-erro{color:#ff8a80;font-weight:600;font-size:13px;min-height:1em}
 #login-form .btn.primary,#pa-form .btn.primary{width:100%}
 .lg-link{background:none;border:0;color:var(--accent);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:4px 0;text-align:center}
 .lg-link:hover{text-decoration:underline}
@@ -1787,6 +1787,13 @@ function entrarApp() {
   renderTudo(); renderBI(); renderCronograma();
 }
 let LG_FALHAS = 0, LG_BLOQ = 0, SOLIC = {};
+function erroBanco(x) {
+  const c = String(x && (x.code || x.message) || x);
+  if (/permission-denied|insufficient permissions/i.test(c)) return 'O banco recusou a gravação: publique as regras do Firestore (Firestore Database → Regras). Código: ' + c;
+  if (/not-found|NOT_FOUND|does not exist/i.test(c)) return 'O banco Firestore ainda não foi criado (Firestore Database → Criar banco de dados). Código: ' + c;
+  if (/unavailable|network|offline/i.test(c)) return 'Sem conexão com o banco. Verifique a internet e tente de novo. Código: ' + c;
+  return 'Não foi possível salvar. Código: ' + c;
+}
 document.getElementById('su-ok').addEventListener('click', async () => {
   const nome = $('#su-nome').value.trim(), mat = $('#su-mat').value.trim(), pin = $('#su-pin').value.trim(), err = $('#su-erro');
   if (!nome || !mat) { err.textContent = 'Informe nome e matrícula.'; return; }
@@ -1794,7 +1801,7 @@ document.getElementById('su-ok').addEventListener('click', async () => {
   if (Object.values(PESSOAS).some(p => p.papel === 'admin' && p.pinHash)) { err.textContent = 'Já existe um administrador. Entre com matrícula e PIN.'; return; }
   const b = $('#su-ok'); b.disabled = true;
   try { const sal = novoSal(); const id = await S.salvarPessoa(null, { nome, matricula: mat, funcao: 'Administrador', turno: '', equipe: '', grupos: [], papel: 'admin', uid: null, ativo: true, pinSalt: sal, pinHash: await hashPin(pin, sal), criadoEm: new Date().toISOString(), atualizadoEm: new Date().toISOString(), por: 'configuracao-inicial' }); login({ pessoaId: id }); }
-  catch (e) { err.textContent = 'Não foi possível salvar. Verifique as regras do Firestore.'; b.disabled = false; }
+  catch (e) { console.warn(e); err.textContent = erroBanco(e); b.disabled = false; }
 });
 /* aparelho compartilhado (tablet/computador da brigada): só matrícula + PIN e saída automática */
 const CHAVE_COMP = 'exh-aparelho-compartilhado';
@@ -1858,7 +1865,7 @@ document.getElementById('pa-form').addEventListener('submit', async e => {
     $('#pa-form').hidden = true; $('#pa-ok').hidden = false;
     $('#pa-ok-txt').textContent = 'Assim que o administrador aprovar, entre com a matrícula ' + mat + ' e o PIN que você criou.';
     $('#pa-form').reset();
-  } catch (x) { err.textContent = S.modo === 'nuvem' && EU.podeGravar === false ? 'Esta página foi compartilhada com você só para visualização. Peça ao responsável acesso de Colaborador.' : 'Não foi possível enviar. Tente de novo.'; }
+  } catch (x) { err.textContent = S.modo === 'nuvem' && EU.podeGravar === false ? 'Esta página foi compartilhada com você só para visualização. Peça ao responsável acesso de Colaborador.' : (S.firebase ? erroBanco(x) : 'Não foi possível enviar. Tente de novo.'); console.warn(x); }
   finally { btn.disabled = false; }
 });
 function renderSolicitacoes() {
