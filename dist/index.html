@@ -862,7 +862,7 @@ const S = {
     if (!meta.exists) return null;
     const m = meta.data(), out = { em: m.em, ext: [], hid: [] };
     for (const [tipo, n] of [['ext', m.partesExt], ['hid', m.partesHid]]) {
-      for (let i = 0; i < n; i++) { const d = await this.db.doc(`inventario/meta/${tipo}/p${i}`).get(); if (d.exists) out[tipo].push(...d.data().linhas); }
+      for (let i = 0; i < n; i++) { const d = await this.db.doc(`inventario/meta/${tipo}/p${i}`).get(); if (d.exists) out[tipo].push(...(d.data().linhas || []).map(l => typeof l === 'string' ? JSON.parse(l) : l)); }
     }
     return out;
   },
@@ -871,8 +871,8 @@ const S = {
     if (this.modo === 'local') { lsSet('inv_local_v2', { em, ext, hid }); return em; }
     const partes = (arr, tam) => { const r = []; for (let i = 0; i < arr.length; i += tam) r.push(arr.slice(i, i + tam)); return r; };
     const pe = partes(ext, 400), ph = partes(hid, 400);
-    for (let i = 0; i < pe.length; i++) await this.db.doc(`inventario/meta/ext/p${i}`).set({ linhas: pe[i] });
-    for (let i = 0; i < ph.length; i++) await this.db.doc(`inventario/meta/hid/p${i}`).set({ linhas: ph[i] });
+    for (let i = 0; i < pe.length; i++) await this.db.doc(`inventario/meta/ext/p${i}`).set({ linhas: pe[i].map(l => JSON.stringify(l)) }); // Firestore não aceita lista dentro de lista
+    for (let i = 0; i < ph.length; i++) await this.db.doc(`inventario/meta/hid/p${i}`).set({ linhas: ph[i].map(l => JSON.stringify(l)) }); // Firestore não aceita lista dentro de lista
     await this.db.doc('inventario/meta').set({ em, por: this.uid, partesExt: pe.length, partesHid: ph.length });
     return em;
   },
