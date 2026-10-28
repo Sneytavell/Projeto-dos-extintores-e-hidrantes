@@ -421,7 +421,7 @@ td.nowrap{white-space:nowrap}
         <div class="lg-erro" id="lg-erro" role="alert"></div>
         <button class="btn primary" type="submit" id="lg-entrar">Entrar</button>
       </form>
-      <button type="button" class="lg-link" id="lg-primeiro">Primeiro acesso? Solicite seu cadastro</button>
+      <button type="button" class="lg-link" id="lg-primeiro" hidden>Primeiro acesso? Solicite seu cadastro</button>
       <p class="muted" id="lg-comp" hidden style="font-size:12.5px;margin:0;text-align:center">Aparelho compartilhado da brigada: cada pessoa entra com a sua matrícula e PIN e clica em <b>Sair</b> ao terminar. Sem uso por 15 minutos, o sistema sai sozinho.</p>
       <div id="lg-rapido-wrap" hidden><div class="lg-sep">ou</div><div class="lg-rapido" id="lg-rapido"></div></div>
     </div>
@@ -1681,12 +1681,23 @@ async function iniciarFirebase() {
   await firebase.auth().signInAnonymously();
   return { db: fsAdapter(firebase.firestore()), uid: firebase.auth().currentUser.uid };
 }
+// Administrador inicial do site (Luiz, matrícula 30070). Só é criado se o banco não tiver nenhum administrador.
+async function garantirAdminInicial() {
+  try {
+    const ps = (await S.db.collection('pessoas').get()).docs.map(d => d.data());
+    if (ps.some(p => p && p.papel === 'admin' && p.ativo !== false && p.pinHash)) return;
+    const agora = new Date().toISOString();
+    await S.db.doc('pessoas/adm_30070').set({ nome: 'Luiz Pinheiro Moraes', matricula: '30070', funcao: 'Administrador', turno: 'ADM', equipe: '', grupos: [], papel: 'admin', uid: null, ativo: true,
+      pinSalt: '91bea7a2bd38d2be', pinHash: 'e4be7d8f8f71c8e6325a7dd9372cbc5430172e6b93f99498c2bcd80b4173ebbe', criadoEm: agora, atualizadoEm: agora, por: 'configuracao-inicial' });
+  } catch (e) { console.warn('admin inicial', e); }
+}
 async function iniciar() {
   if (USA_FIREBASE && !SNAP) {
     try {
       const fb = await iniciarFirebase();
       S.modo = 'nuvem'; S.db = fb.db; S.user = null; S.uid = fb.uid; S.firebase = true;
       EU = { id: fb.uid, nome: 'Usuário', nomeConta: 'Usuário', avatar: '', dono: false, editor: false, podeGravar: true, papel: 'visualizador' };
+      await garantirAdminInicial();
     } catch (e) {
       console.warn(e);
       const cod = String(e && (e.code || e.message) || e);
@@ -1901,10 +1912,7 @@ function mostrarLogin(msg) {
     if (avatar) b.querySelector('img').src = avatar;
     b.querySelector('strong').textContent = txt; b.querySelector('.muted').textContent = sub; b.onclick = fn; r.appendChild(b);
   };
-  const semAdmin = S.firebase && !Object.values(PESSOAS).some(p => p.ativo !== false && p.papel === 'admin' && p.pinHash);
-  // Só aparece pelo link de configuração (?configurar); quem abre o site normal vê só o login.
-  const linkConfig = /[?#&]configurar\b/.test(location.search + location.hash);
-  $('#lg-setup').hidden = !(semAdmin && linkConfig);
+  $('#lg-setup').hidden = true; // cadastro só pelo administrador, dentro do sistema
   const comp = aparelhoCompartilhado();
   $('#lg-comp').hidden = !comp;
   const minha = comp ? null : Object.entries(PESSOAS).find(([, p]) => p.uid && p.uid === EU.id && p.ativo !== false);
