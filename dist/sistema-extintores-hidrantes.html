@@ -238,6 +238,12 @@ td.nowrap{white-space:nowrap}
 .cg-heat td,.cg-heat th{text-align:center}.cg-heat td.cel{font-weight:700;font-size:13px;min-width:74px}.cg-heat td:first-child,.cg-heat th:first-child{text-align:left}
 .user-id{display:flex;align-items:center;gap:8px;min-width:0}.user-txt{display:flex;align-items:center;gap:8px;min-width:0}
 .nv-ic{display:none;flex:none}
+.ut-ic{flex:none}.ut-lbl{display:none}.user-tools{display:contents}.user-card{display:flex;align-items:center;gap:8px}
+.user-ini{width:34px;height:34px;flex:none;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;letter-spacing:.02em}
+.ut-sw{position:relative;flex:none;width:30px;height:17px;border-radius:999px;background:var(--border);margin-left:auto;transition:background .15s}
+.ut-sw::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:transform .15s}
+@media (max-width:999px){.ut-btn .ut-t{display:none}.ut-btn{gap:6px;padding:6px 8px}.user-card .papel{display:none}.ut-sair .ut-t{display:none}}
+.ut-btn.on .ut-sw{background:var(--good,#3fb950)}.ut-btn.on .ut-sw::after{transform:translateX(13px)}
 @media (max-width:700px){#btn-importar{display:none!important}.user .papel{font-size:10px}}
 @media (min-width:1000px){
   .topbar{position:fixed;top:0;left:0;bottom:0;width:232px;border-bottom:0;border-right:1px solid var(--border);box-shadow:inset 3px 0 0 var(--accent);overflow-y:auto;z-index:30}
@@ -251,7 +257,19 @@ td.nowrap{white-space:nowrap}
   .user .user-id{padding:0 4px}
   .user .user-txt{flex-direction:column;align-items:flex-start;gap:3px}
   .user .nome{display:block!important;font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
-  .user .btn{width:100%;justify-content:center}
+  .user{gap:12px}
+  .user-tools{display:flex;flex-direction:column;gap:2px}
+  .user-tools:not(:has(.ut-btn:not([hidden]))){display:none}
+  .ut-lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 12px 4px}
+  .user .ut-btn{display:flex;align-items:center;gap:12px;width:100%;justify-content:flex-start;background:transparent;border-color:transparent;color:var(--muted);font-weight:500;font-size:13.5px;padding:8px 12px;text-align:left}
+  .user .ut-btn:hover{background:var(--bg-soft,rgba(255,255,255,.05));color:var(--text,inherit)}
+  .user-card{display:flex;align-items:center;gap:8px;background:var(--bg-soft,rgba(255,255,255,.04));border:1px solid var(--border);border-radius:12px;padding:10px 8px 10px 10px}
+  .user-card .user-id{flex:1;min-width:0;padding:0}
+  .user-card .user-txt{min-width:0;max-width:100%}
+  .user-card .nome{max-width:132px!important}
+  .user .ut-sair{width:auto;padding:8px;border-color:transparent;background:transparent;color:var(--muted)}
+  .user .ut-sair:hover{color:var(--crit,#ff8a80);background:rgba(255,138,128,.1)}
+  .user .ut-sair .ut-t{display:none}
   #tela-app > main.wrap{margin-left:232px;margin-right:0;max-width:none;padding-left:32px;padding-right:32px}
   #tela-app > main.wrap > *{max-width:1280px}
 }
@@ -460,11 +478,16 @@ td.nowrap{white-space:nowrap}
       <button id="nav-acessos" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M22 20c0-2.7-1.6-4.8-4-5.6"/></svg><span>Pessoas</span></button>
     </nav>
     <div class="user">
-      <button id="btn-importar" class="btn small" type="button" title="Reimportar planilha de inventário (.xlsx)">Atualizar dados</button>
-      <div class="user-id"><img class="avatar" id="user-avatar" alt=""><span class="user-txt"><span class="nome" id="user-nome"></span><span class="papel" id="user-papel"></span></span></div>
-      <button id="btn-backup" class="btn small" type="button" hidden title="Trazer os dados do sistema antigo (arquivo .json)">Importar backup</button><input id="file-backup" type="file" accept=".json" hidden>
-      <button id="btn-compart" class="btn small" type="button" hidden title="Neste aparelho, todos entram só com matrícula e PIN">Aparelho compartilhado</button>
-      <button id="btn-sair" class="btn small" type="button" title="Sair e voltar à tela de login">Sair</button>
+      <div class="user-tools">
+        <div class="ut-lbl">Ferramentas</div>
+        <button id="btn-importar" class="btn small ut-btn" type="button" title="Reimportar planilha de inventário (.xlsx)"><svg class="ut-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg><span class="ut-t">Atualizar inventário</span></button>
+        <button id="btn-backup" class="btn small ut-btn" type="button" hidden title="Trazer os dados do sistema antigo (arquivo .json)"><svg class="ut-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg><span class="ut-t">Importar backup</span></button><input id="file-backup" type="file" accept=".json" hidden>
+        <button id="btn-compart" class="btn small ut-btn" type="button" hidden aria-pressed="false" title="Neste aparelho, todos entram só com matrícula e PIN"><svg class="ut-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="ut-t">Aparelho compartilhado</span><span class="ut-sw" aria-hidden="true"></span></button>
+      </div>
+      <div class="user-card">
+        <div class="user-id"><img class="avatar" id="user-avatar" alt=""><span class="user-ini" id="user-ini" aria-hidden="true"></span><span class="user-txt"><span class="nome" id="user-nome"></span><span class="papel" id="user-papel"></span></span></div>
+        <button id="btn-sair" class="btn small ut-sair" type="button" title="Sair e voltar à tela de login" aria-label="Sair"><svg class="ut-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg><span class="ut-t">Sair</span></button>
+      </div>
     </div>
     <input id="file-import" type="file" accept=".xlsx,.xls" hidden>
   </div></header>
@@ -1058,7 +1081,7 @@ function aplicarPapel() {
   $('#nav-acessos').hidden = !pode.verCadastro() || S.modo === 'local';
   $('#btn-importar').hidden = !pode.inventario();
   if ($('#btn-backup')) $('#btn-backup').hidden = !(S.firebase && pode.administrar());
-  if ($('#btn-compart')) { $('#btn-compart').hidden = S.modo !== 'nuvem' || !pode.administrar(); $('#btn-compart').textContent = 'Aparelho compartilhado: ' + (aparelhoCompartilhado() ? 'ligado' : 'desligado'); }
+  if ($('#btn-compart')) { $('#btn-compart').hidden = S.modo !== 'nuvem' || !pode.administrar(); const lg = aparelhoCompartilhado(), bc = $('#btn-compart'); bc.classList.toggle('on', lg); bc.setAttribute('aria-pressed', lg); bc.querySelector('.ut-t').textContent = 'Aparelho compartilhado'; bc.title = lg ? 'Ligado: neste aparelho todos entram só com matrícula e PIN (clique para desligar)' : 'Desligado: clique para que neste aparelho todos entrem só com matrícula e PIN'; }
   $('#imp-bar').hidden = !pode.importarCampo();
   const somente = S.modo === 'nuvem' && pode.inspecionar() && EU.podeGravar === false;
   $('#banner-somente').hidden = !somente;
@@ -1782,6 +1805,10 @@ function atualizarNomeTopo() {
   $('#user-nome').textContent = p ? p.nome : SESSAO?.visitante ? 'Visitante' : EU.nome;
   const conta = p ? (p.uid === EU.id) : !SESSAO?.visitante;
   $('#user-avatar').hidden = !(EU.avatar && conta);
+  const pal = String($('#user-nome').textContent || '').trim().split(/\s+/).filter(Boolean);
+  $('#user-nome').title = pal.join(' '); if (pal.length > 2) $('#user-nome').textContent = pal[0] + ' ' + pal[pal.length - 1];
+  $('#user-ini').textContent = ((pal[0] || '?')[0] + (pal.length > 1 ? pal[pal.length - 1][0] : '')).toUpperCase();
+  $('#user-ini').hidden = !$('#user-avatar').hidden;
 }
 function entrarApp() {
   APP_ABERTO = true; AREAS_SIG = '?';
@@ -1822,17 +1849,17 @@ document.getElementById('file-backup').addEventListener('change', async e => {
     const bk = JSON.parse(await f.text()); const cols = bk.colecoes || bk;
     const lista = Object.entries(cols).flatMap(([c, docs]) => Object.entries(docs || {}).map(([id, d]) => [c, id, d]));
     if (!lista.length) { toast('Backup vazio.'); return; }
-    const b = $('#btn-backup'); b.disabled = true; let n = 0;
-    for (const [c, id, d] of lista) { await S.db.doc(c + '/' + id).set(d); if (++n % 25 === 0) b.textContent = `Importando… ${n}/${lista.length}`; }
-    b.textContent = 'Importar backup'; b.disabled = false; toast(`Backup importado: ${nBR(n)} registros. Recarregue a página.`);
-  } catch (x) { toast('Não foi possível importar: ' + (x.message || x)); $('#btn-backup').disabled = false; $('#btn-backup').textContent = 'Importar backup'; }
+    const b = $('#btn-backup'), bt = b.querySelector('.ut-t'); b.disabled = true; let n = 0;
+    for (let i = 0; i < lista.length; i += 40) { await Promise.all(lista.slice(i, i + 40).map(([c, id, d]) => S.db.doc(c + '/' + id).set(d))); n = Math.min(lista.length, i + 40); bt.textContent = `Importando… ${nBR(n)}/${nBR(lista.length)}`; }
+    bt.textContent = 'Importar backup'; b.disabled = false; toast(`Backup importado: ${nBR(n)} registros. Recarregue a página.`);
+  } catch (x) { toast('Não foi possível importar: ' + (x.message || x)); $('#btn-backup').disabled = false; $('#btn-backup').querySelector('.ut-t').textContent = 'Importar backup'; }
 });
 document.getElementById('btn-compart').addEventListener('click', () => {
   const b = $('#btn-compart'), lig = aparelhoCompartilhado();
   if (!lig) {
     const adm = Object.values(PESSOAS).some(p => p.ativo !== false && p.papel === 'admin' && p.pinHash && p.matricula);
     if (!adm) { toast('Antes de ligar, cadastre você em Pessoas com perfil Administrador, matrícula e PIN. Com o aparelho compartilhado, até o administrador entra por matrícula e PIN.'); return; }
-    if (b.dataset.c !== '1') { b.dataset.c = '1'; b.textContent = 'Confirmar: ligar e sair'; setTimeout(() => { b.dataset.c = ''; aplicarPapel(); }, 6000); return; }
+    if (b.dataset.c !== '1') { b.dataset.c = '1'; b.querySelector('.ut-t').textContent = 'Confirmar: ligar e sair'; setTimeout(() => { b.dataset.c = ''; aplicarPapel(); }, 6000); return; }
     try { localStorage.setItem(CHAVE_COMP, '1'); } catch (e) {}
     b.dataset.c = ''; sair('Aparelho compartilhado ligado. A partir de agora, todos entram com matrícula e PIN.');
   } else {

@@ -306,3 +306,4 @@ Nova aba "Cronograma" (todos veem; só admin cria/atribui):
 - (v47) Login/Primeiro acesso: mensagem de erro legível (vermelho claro) e com a causa (regras do Firestore não publicadas, banco não criado, sem internet) e o código.
 - (v48) Site: sem cadastro pela tela de login (sem Primeiro acesso e sem Primeira configuração); só o administrador cadastra pessoas dentro do sistema. Administrador inicial Luiz Pinheiro Moraes (matrícula 30070) criado automaticamente se o banco não tiver nenhum administrador.
 - (v49) Nova inspeção: "Alterar dados" saiu do topo do item e só aparece no bloco Substituição quando "O item foi substituído?" = Sim (extintor e hidrante).
+- (v50) Menu lateral: rodapé reorganizado — bloco Ferramentas (Atualizar inventário, Importar backup, Aparelho compartilhado com chave liga/desliga) e cartão do usuário com iniciais, nome curto, perfil e botão Sair (ícone). No celular, ferramentas só com ícone. Importar backup grava em lotes (mais rápido).
