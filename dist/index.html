@@ -439,7 +439,6 @@ td.nowrap{white-space:nowrap}
           <div class="field"><label for="pa-mat">Matrícula</label><input id="pa-mat" type="text" inputmode="numeric"></div>
           <div class="field"><label for="pa-turno">Turno</label><select id="pa-turno"></select></div>
         </div>
-        <div class="field"><label for="pa-func">Função</label><input id="pa-func" type="text" list="pa-funcs" placeholder="Ex.: Bombeiro Civil (BC)"><datalist id="pa-funcs"></datalist></div>
         <div class="field"><label for="pa-eq">Equipe <span class="muted">(opcional)</span></label><input id="pa-eq" type="text" placeholder="Ex.: Redução"></div>
         <div class="form-row">
           <div class="field"><label for="pa-pin">Crie um PIN</label><input id="pa-pin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="4 a 8 dígitos"></div>
@@ -1834,8 +1833,7 @@ function telaLogin(qual) {
   if (qual === 'primeiro') {
     $('#pa-form').hidden = false; $('#pa-ok').hidden = true; $('#pa-erro').textContent = '';
     const t = $('#pa-turno'); if (!t.options.length) t.innerHTML = '<option value="">—</option>' + TURNOS.map(x => `<option>${x}</option>`).join('');
-    $('#pa-funcs').innerHTML = FUNCOES.map(f => `<option value="${esc(f)}">`).join('');
-    const temConta = S.modo === 'nuvem' && EU.id && !pessoaDaConta(EU.id);
+    const temConta = S.modo === 'nuvem' && !S.firebase && EU.id && !pessoaDaConta(EU.id);
     $('#pa-conta-wrap').hidden = !temConta; $('#pa-conta').checked = false;
     if (temConta) $('#pa-conta-txt').textContent = 'Este aparelho está com a minha conta Claude (' + (EU.nomeConta || EU.nome) + ') — vincular ao meu cadastro';
     setTimeout(() => $('#pa-nome').focus(), 0);
@@ -1854,7 +1852,7 @@ document.getElementById('pa-form').addEventListener('submit', async e => {
   const btn = $('#pa-enviar'); btn.disabled = true; err.textContent = '';
   try {
     const sal = novoSal();
-    const d = { nome, matricula: mat, turno: $('#pa-turno').value, funcao: v('#pa-func'), equipe: v('#pa-eq'), pinSalt: sal, pinHash: await hashPin(pin, sal),
+    const d = { nome, matricula: mat, turno: $('#pa-turno').value, funcao: '', equipe: v('#pa-eq'), pinSalt: sal, pinHash: await hashPin(pin, sal),
       uid: $('#pa-conta').checked && !$('#pa-conta-wrap').hidden ? EU.id : null, em: new Date().toISOString() };
     await S.salvarSolicitacao('m_' + mat.replace(/[^\w-]/g, '_'), d);
     $('#pa-form').hidden = true; $('#pa-ok').hidden = false;
