@@ -301,3 +301,4 @@ Nova aba "Cronograma" (todos veem; só admin cria/atribui):
 - Regras do Firestore em `firestore.rules` (leitura/gravação para quem abriu o site; o controle de acesso é pela matrícula/PIN).
 - (v43) Banco ligado: firebase-config.js preenchido com o projeto Firebase `extintores-albras`.
 - (v44) Erro de conexão com o Firebase mostra a causa provável (login Anônimo desativado, apiKey, rede) e o código do erro.
+- (v45) Site: a caixa "Primeira configuração" (criar administrador) só aparece pelo link com ?configurar e enquanto não houver administrador; no login normal ficam só matrícula/PIN, Primeiro acesso (pedido aprovado pelo administrador) e Visitante.

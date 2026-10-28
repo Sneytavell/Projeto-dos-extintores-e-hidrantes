@@ -1903,7 +1903,9 @@ function mostrarLogin(msg) {
     b.querySelector('strong').textContent = txt; b.querySelector('.muted').textContent = sub; b.onclick = fn; r.appendChild(b);
   };
   const semAdmin = S.firebase && !Object.values(PESSOAS).some(p => p.ativo !== false && p.papel === 'admin' && p.pinHash);
-  $('#lg-setup').hidden = !semAdmin;
+  // Só aparece pelo link de configuração (?configurar); quem abre o site normal vê só o login.
+  const linkConfig = /[?#&]configurar\b/.test(location.search + location.hash);
+  $('#lg-setup').hidden = !(semAdmin && linkConfig);
   const comp = aparelhoCompartilhado();
   $('#lg-comp').hidden = !comp;
   const minha = comp ? null : Object.entries(PESSOAS).find(([, p]) => p.uid && p.uid === EU.id && p.ativo !== false);
