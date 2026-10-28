@@ -319,3 +319,4 @@ Nova aba "Cronograma" (todos veem; só admin cria/atribui):
 - (v60) Painel → Extintores e Hidrantes: filtros Geral → Área → Local em cascata (como o inventário) e colunas Geral, Área, Local.
 - (v61) Nova inspeção: filtros Grupo → Geral → Área → Local em cascata (Local substitui o antigo Locação), para extintores e hidrantes.
 - (v62) Filtros no padrão do inventário: Geral → Área → Locação (código da planilha, ex.: 111SB/02) na Nova inspeção e no Painel → Extintores; hidrantes usam Local. Atalho do cronograma abre a inspeção filtrada pelo local.
+- (v63) Itens incluídos pelas planilhas (ex.: 123/01–04, 132/06) organizados no padrão do inventário: Geral = divisão (pela Unidade do cabeçalho), Área = parte da Unidade (Redução II), Local sem o código (Subestação), Locação = aba; não aparecem mais "120-Redução II"/"130-Redução III" como Geral.

@@ -999,8 +999,24 @@ function statusHid(it) {
 let TODOS_EXT = [], TODOS_HID = [], ALL_EXT = [], ALL_HID = [], RET_EXT = [], RET_HID = [];
 function montar() {
   const vale = a => a && (!BASE_EM || a.em > BASE_EM);
-  const novosE = Object.values(NOVOS).filter(x => x.tipo === 'ext' && !BASE_EXT.some(b => String(b.tag).trim() === x.tag && norm(b.localizacao) === norm(x.localizacao))).map(x => ({ n: idNovoExt(x.tag), cod: x.cod || x.aba || '', geral: x.geral || '', area: x.area || '', local: x.local || '', localizacao: x.localizacao || '', tag: x.tag, tipo: x.tipoCap || '', fab: x.fab || '', recarga: x.recarga || '', teste: x.teste || '', unidade: x.unidade || (/^\d{3}\s*-/.test(x.geral || '') ? x.geral : ''), _novo: x.grupo || '' }));
-  const novosH = Object.values(NOVOS).filter(x => x.tipo === 'hid').map(x => ({ geral: x.geral || '', area: x.area || '', local: x.local || '', tag: x.tag, hidrante: '', abrigos: x.abrigos || '', qtdMang: x.qtdMang ?? '', tamanho: '', teste1: x.teste1 || '', teste2: x.teste2 || '', m1: '', m2: '', _novo: x.grupo || '' })).filter(x => !BASE_HID.some(b => chaveHid(b) === chaveHid(x)));
+  // itens incluídos pelas planilhas: o cabeçalho traz a Unidade ("120-Redução II") e a Área da folha ("123/Subestação");
+  // aqui eles viram Geral (divisão), Área e Local no mesmo padrão do inventário
+  const unGeral = {}; BASE_EXT.forEach(b => { const u = norm(unidadeExt(b)).replace(/\s*-\s*/g, '-'); (unGeral[u] = unGeral[u] || {})[b.geral] = ((unGeral[u] || {})[b.geral] || 0) + 1; });
+  const areaGeral = {}; BASE_HID.forEach(b => { areaGeral[norm(b.area)] = b.geral; });
+  const NOVOS_N = Object.values(NOVOS).map(x => {
+    const ehCod = v => /^\d{3}\s*-/.test(String(v || ''));
+    const un = x.unidade || (ehCod(x.geral) ? x.geral : '');
+    if (!un && !ehCod(x.geral)) return x;
+    const kU = norm(un).replace(/\s*-\s*/g, '-'), cont = unGeral[kU] || {};
+    const geral = Object.keys(cont).sort((a, b) => cont[b] - cont[a])[0] || (x.tipo === 'hid' ? areaGeral[norm(x.area)] : '') || '';
+    const areaUn = String(un).replace(/^\d{3}\s*-\s*/, '').trim();
+    const semCod = v => String(v || '').replace(/^\d+\s*\/\s*/, '').trim();
+    return x.tipo === 'ext'
+      ? { ...x, unidade: un, geral: geral || (ehCod(x.geral) ? '' : x.geral), area: areaUn || x.area, local: semCod(x.local || x.area), cod: x.cod || x.aba || '' }
+      : { ...x, unidade: un, geral: geral || areaGeral[norm(x.area)] || (ehCod(x.geral) ? '' : x.geral) };
+  });
+  const novosE = NOVOS_N.filter(x => x.tipo === 'ext' && !BASE_EXT.some(b => String(b.tag).trim() === x.tag && norm(b.localizacao) === norm(x.localizacao))).map(x => ({ n: idNovoExt(x.tag), cod: x.cod || x.aba || '', geral: x.geral || '', area: x.area || '', local: x.local || '', localizacao: x.localizacao || '', tag: x.tag, tipo: x.tipoCap || '', fab: x.fab || '', recarga: x.recarga || '', teste: x.teste || '', unidade: x.unidade || (/^\d{3}\s*-/.test(x.geral || '') ? x.geral : ''), _novo: x.grupo || '' }));
+  const novosH = NOVOS_N.filter(x => x.tipo === 'hid').map(x => ({ geral: x.geral || '', area: x.area || '', local: x.local || '', tag: x.tag, hidrante: '', abrigos: x.abrigos || '', qtdMang: x.qtdMang ?? '', tamanho: '', teste1: x.teste1 || '', teste2: x.teste2 || '', m1: '', m2: '', _novo: x.grupo || '' })).filter(x => !BASE_HID.some(b => chaveHid(b) === chaveHid(x)));
   EXT = [...BASE_EXT, ...novosE].map(b => { const a = AJ.ext[String(b.n)]; const it = { ...b }; if (vale(a)) { ['recarga', 'teste', 'fab', 'tipo', 'unidade'].forEach(f => { if (a[f]) it[f] = a[f]; }); if (a.retirado) { it._retirado = a.retirado; it._retMotivo = a.retiradoMotivo || ''; } } return it; });
   HID = [...BASE_HID, ...novosH].map((b, i) => { const it = { ...b, _idx: i, _key: chaveHid(b) }; const a = AJ.hid[it._key]; if (vale(a)) { ['teste1', 'teste2', 'm1', 'm2', 'fab1', 'fab2'].forEach(f => { if (a[f]) it[f] = a[f]; }); if (a.retirado) { it._retirado = a.retirado; it._retMotivo = a.retiradoMotivo || ''; } } return it; });
   EXT.forEach(it => { it._status = statusExt(it); it._grupo = SEED.gExt[it.n] || it._novo || ''; });
