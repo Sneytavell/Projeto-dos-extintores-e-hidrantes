@@ -526,7 +526,7 @@ td.nowrap{white-space:nowrap}
     <div class="user">
       <div class="user-tools">
         <div class="ut-lbl">Ferramentas</div>
-        <button id="btn-importar" class="btn small ut-btn" type="button" title="Reimportar planilha de inventário (.xlsx)"><svg class="ut-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg><span class="ut-t">Atualizar inventário</span></button>
+        <button id="btn-importar" class="btn small ut-btn" type="button" title="Reimportar planilha de inventário (.xlsx)"><svg class="ut-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg><span class="ut-t">Inventário mestre (.xlsx)</span></button>
         <button id="btn-backup" class="btn small ut-btn" type="button" hidden title="Trazer os dados do sistema antigo (arquivo .json)"><svg class="ut-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg><span class="ut-t">Importar backup</span></button><input id="file-backup" type="file" accept=".json" hidden>
         <button id="btn-compart" class="btn small ut-btn" type="button" hidden aria-pressed="false" title="Neste aparelho, todos entram só com matrícula e PIN"><svg class="ut-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="ut-t">Aparelho compartilhado</span><span class="ut-sw" aria-hidden="true"></span></button>
       </div>
@@ -636,7 +636,7 @@ td.nowrap{white-space:nowrap}
         <button type="button" data-cr="calendario">Calendário do mês</button>
       </nav>
       <div id="cr-planilhas" class="kpi-group" style="gap:14px">
-        <div class="section-title"><div class="cr-mesnav"><button class="btn small" type="button" id="dp-ant" aria-label="Mês anterior">‹</button><strong id="dp-mes"></strong><button class="btn small" type="button" id="dp-prox" aria-label="Próximo mês">›</button></div><div class="cr-acoes"><button class="btn" type="button" id="dp-gerar">Gerar planilhas do mês</button><button class="btn primary" type="button" id="dp-nova">Entregar planilha</button></div></div>
+        <div class="section-title"><div class="cr-mesnav"><button class="btn small" type="button" id="dp-ant" aria-label="Mês anterior">‹</button><strong id="dp-mes"></strong><button class="btn small" type="button" id="dp-prox" aria-label="Próximo mês">›</button></div><div class="cr-acoes"><button class="btn" type="button" id="dp-atualizar" title="Ler as planilhas do mês e atualizar o cadastro (nº de fabricação, recarga, teste, novos e saídas)">Atualizar inventário pelas planilhas</button><button class="btn" type="button" id="dp-gerar">Gerar planilhas do mês</button><button class="btn primary" type="button" id="dp-nova">Entregar planilha</button></div></div>
         <div class="dp-grupos" id="dp-grupos"></div>
         <div class="table-wrap bi-scroll"><table class="dp-tab"><thead><tr><th>Equipe</th><th>Líder</th><th>Recebimento</th><th>Devolução</th><th>Prazo de devolução</th><th>Status</th><th>Planilha</th><th>Progresso</th><th>Anotações</th><th>Próxima planilha</th><th style="min-width:120px"></th></tr></thead><tbody id="dp-tbody"></tbody></table></div>
         <p class="bi-note">Um grupo só pode ser entregue a outra equipe depois que a equipe que está com ele registrar a devolução. Enquanto está com a planilha, a equipe vê só esses grupos no sistema.</p>
@@ -2774,7 +2774,7 @@ function renderPlanilhas() {
   const box = $('#cr-planilhas'); if (!box || box.hidden || $('#area-cronograma').hidden) return;
   DP.ym = DP.ym || ymAtual();
   const nm = nomeMesYm(DP.ym); $('#dp-mes').textContent = nm.charAt(0).toUpperCase() + nm.slice(1);
-  $('#dp-nova').hidden = !pode.planejar(); $('#dp-gerar').hidden = !(pode.programarAlgo() || pode.importarCampo());
+  $('#dp-nova').hidden = !pode.planejar(); $('#dp-gerar').hidden = !(pode.programarAlgo() || pode.importarCampo()); $('#dp-atualizar').hidden = !podeRetirar();
   $('#dp-grupos').innerHTML = GRUPOS_INSP.map(g => {
     const d = donoGrupo(g);
     if (d) return `<div class="dp-g ocupado"><strong>Grupo ${g}</strong><span>Com a equipe <b>${esc(d.equipe)}</b></span><span class="muted">desde ${fmt(d.recebimento)} · prazo ${fmt(d.prazo)}</span></div>`;
@@ -3136,6 +3136,148 @@ function abrirGerarPlanilhas() {
   }
 }
 document.getElementById('dp-gerar').addEventListener('click', abrirGerarPlanilhas);
+/* --- atualizar o inventário a partir das planilhas limpas do mês (dados novos de campo) --- */
+function analisarInventarioPlanilha(wb, arquivo) {
+  const folhas = [];
+  wb.SheetNames.forEach(nm => { const rows = XLSX.utils.sheet_to_json(wb.Sheets[nm], { header: 1, raw: true, defval: null }); const f = lerFolhaExtintor(nm, rows) || lerFolhaHidrante(nm, rows); if (f) folhas.push(f); });
+  const idxExt = new Map(), tagsExt = new Map(), idxHid = new Map();
+  ALL_EXT.forEach(it => { idxExt.set(String(it.tag).trim() + '|' + norm(it.localizacao), it); const k = String(it.tag).trim(); tagsExt.set(k, (tagsExt.get(k) || []).concat(it)); });
+  ALL_HID.forEach(it => idxHid.set(String(it.tag).trim() + '|' + norm(it.local), it));
+  const grupoArq = (String(arquivo).match(/^\s*(\d+\.\d+)/) || [])[1] || '';
+  const res = { arquivo, folhas: folhas.length, itens: 0, alteracoes: [], novos: {}, saidas: [], voltas: [], iguais: 0 };
+  const achados = new Set(), escopoExt = new Set(), escopoHid = new Set(), gruposVistos = new Set();
+  const vazio = v => v == null || String(v).trim() === '' || /^n\/?a$/i.test(String(v).trim());
+  const dif = (it, chave, tipo, campo, para) => {
+    if (vazio(para)) return false;
+    const de = it[campo] || '';
+    const data = ['recarga', 'teste', 'teste1', 'teste2'].includes(campo);
+    // datas: vale o mês (o vencimento é sempre no último dia do mês)
+    const igual = campo === 'tipo' ? tipoPadrao(de) === tipoPadrao(para) : data ? String(de).slice(0, 7) === String(para).slice(0, 7) : String(de).trim().toUpperCase() === String(para).trim().toUpperCase();
+    if (igual) return false;
+    res.alteracoes.push({ tipo, it, chave, campo, de, para: String(para).trim(), antiga: data && de && para < de });
+    return true;
+  };
+  folhas.forEach(f => {
+    const gf = {};
+    f.itens.forEach(i => {
+      res.itens++;
+      if (f.tipo === 'ext') {
+        let it = idxExt.get(i.tag + '|' + norm(i.localizacao)); if (!it && (tagsExt.get(i.tag) || []).length === 1) it = tagsExt.get(i.tag)[0];
+        escopoExt.add(String(i.tag).split('/')[0]);
+        if (!it) { const id = 'e_' + idNovoExt(i.tag) + '_' + hashKey(norm(i.localizacao)); if (!NOVOS[id]) res.novos[id] = { tipo: 'ext', tag: i.tag, localizacao: i.localizacao, tipoCap: i.tipoCap || '', fab: i.fab || '', recarga: i.recarga || '', teste: i.teste || '', geral: f.unidade || '', area: f.areaCab || '', local: f.areaCab || '', aba: f.nome, _folha: f.nome }; return; }
+        const k = 'e' + it.n; achados.add(k); if (it._grupo) { gf[it._grupo] = (gf[it._grupo] || 0) + 1; gruposVistos.add(it._grupo); }
+        if (it._retirado) res.voltas.push({ tipo: 'ext', it, chave: String(it.n), aba: f.nome });
+        let mudou = false;
+        [['fab', i.fab], ['tipo', i.tipoCap], ['recarga', i.recarga], ['teste', i.teste]].forEach(([c, v]) => { if (dif(it, String(it.n), 'ext', c, v)) mudou = true; });
+        if (!mudou) res.iguais++;
+      } else {
+        let it = idxHid.get(i.tag + '|' + norm(i.local));
+        if (!it && i.area) { const c = ALL_HID.filter(h => String(h.tag).trim() === i.tag && new RegExp('^\\s*' + i.area.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(String(h.area))); if (c.length === 1) it = c[0]; }
+        if (i.area) escopoHid.add(norm(i.area));
+        if (!it) { const nv = { tipo: 'hid', tag: i.tag, area: i.area || '', local: i.local || '', geral: f.unidade || '', teste1: i.teste1 || '', teste2: i.teste2 || '', qtdMang: [i.teste1, i.teste2].filter(Boolean).length || '', aba: f.nome, _folha: f.nome }; const id = 'h_' + hashKey(i.tag + '|' + norm(i.local)); if (!NOVOS[id]) res.novos[id] = nv; return; }
+        const k = 'h' + it._key; achados.add(k); if (it._grupo) { gf[it._grupo] = (gf[it._grupo] || 0) + 1; gruposVistos.add(it._grupo); }
+        if (it.area) escopoHid.add(norm(it.area));
+        if (it._retirado) res.voltas.push({ tipo: 'hid', it, chave: it._key, aba: f.nome });
+        let mudou = false;
+        [['teste1', i.teste1], ['teste2', i.teste2]].forEach(([c, v]) => { if (dif(it, it._key, 'hid', c, v)) mudou = true; });
+        if (!mudou) res.iguais++;
+      }
+    });
+    f._grupo = (Object.entries(gf).sort((a, b) => b[1] - a[1])[0] || [grupoArq])[0];
+  });
+  Object.values(res.novos).forEach(x => { x.grupo = (folhas.find(f => f.nome === x._folha) || {})._grupo || grupoArq; delete x._folha; });
+  // itens do sistema nas mesmas locações/áreas (e grupos) que não vieram na planilha
+  const noGrupo = it => !gruposVistos.size || gruposVistos.has(it._grupo);
+  ALL_EXT.forEach(it => { if (!it._retirado && !achados.has('e' + it.n) && escopoExt.has(String(it.tag).split('/')[0]) && noGrupo(it)) res.saidas.push({ tipo: 'ext', it, chave: String(it.n) }); });
+  ALL_HID.forEach(it => { if (!it._retirado && !achados.has('h' + it._key) && escopoHid.has(norm(it.area)) && noGrupo(it)) res.saidas.push({ tipo: 'hid', it, chave: it._key }); });
+  res._achados = achados;
+  return res;
+}
+function abrirAtualizarInventario() {
+  const bg = modalBase(`<div class="section-title"><h2 style="font-size:18px;margin:0">Atualizar inventário pelas planilhas</h2><button class="btn small" type="button" id="ai-x">Fechar</button></div>
+    <p class="muted" style="margin:0">Envie as planilhas do mês (podem estar limpas, sem marcações). O sistema compara cada extintor e hidrante com o cadastro e mostra o que mudou: nº de fabricação, tipo, recarga e teste, equipamentos novos e os que não vieram mais na planilha. Você confere e aplica só o que estiver certo.</p>
+    <div class="gp-drop" id="ai-drop" tabindex="0" role="button"><strong>Escolher planilhas (.xlsx)</strong><div class="muted" style="font-size:13px">ou arraste os arquivos aqui · pode enviar vários de uma vez</div><input id="ai-file" type="file" accept=".xlsx,.xls" multiple hidden></div>
+    <div id="ai-res" style="display:flex;flex-direction:column;gap:14px"></div>
+    <div class="form-actions"><span class="muted" id="ai-aviso" role="status"></span><button class="btn primary" type="button" id="ai-ok" disabled>Aplicar selecionados</button></div>`);
+  bg.querySelector('.modal').style.maxWidth = '1040px';
+  const $m = q => bg.querySelector(q);
+  let R = null;
+  $m('#ai-x').onclick = () => bg.remove();
+  const drop = $m('#ai-drop'), inp = $m('#ai-file');
+  drop.onclick = () => inp.click(); drop.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); } };
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('on'); }; drop.ondragleave = () => drop.classList.remove('on');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('on'); ler([...e.dataTransfer.files]); };
+  inp.onchange = () => { ler([...inp.files]); inp.value = ''; };
+  const nomeIt = (t, it) => t === 'ext' ? it.tag : 'TAG ' + it.tag;
+  const ondeIt = (t, it) => t === 'ext' ? [it.local, it.localizacao].filter(Boolean).join(' · ') : [it.area, it.local].filter(Boolean).join(' · ');
+  const valor = (c, v) => !v ? '—' : ['recarga', 'teste', 'teste1', 'teste2'].includes(c) ? fmt(v) : v;
+  async function ler(files) {
+    files = files.filter(f => /\.xlsx?$/i.test(f.name)); if (!files.length) return;
+    $m('#ai-aviso').textContent = 'Lendo planilhas…';
+    try { await carregarSheetJS(); } catch (e) { $m('#ai-aviso').textContent = e.message; return; }
+    const juntos = { arquivos: [], folhas: 0, itens: 0, alteracoes: [], novos: {}, saidas: [], voltas: [], iguais: 0 };
+    for (const f of files) {
+      try {
+        const wb = XLSX.read(await f.arrayBuffer(), { type: 'array', cellDates: true }); const r = analisarInventarioPlanilha(wb, f.name);
+        juntos.arquivos.push(f.name); juntos.folhas += r.folhas; juntos.itens += r.itens; juntos.iguais += r.iguais; juntos.alteracoes.push(...r.alteracoes); Object.assign(juntos.novos, r.novos); juntos.voltas.push(...r.voltas);
+        juntos.saidas.push(...r.saidas); juntos._achados = (juntos._achados || []).concat(r);
+      } catch (e) { toast(f.name + ': não foi possível ler (' + (e.message || e) + ').'); }
+    }
+    // um item que não veio numa planilha mas apareceu em outra não é saída
+    const presentes = new Set(); (juntos._achados || []).forEach(r => r._achados.forEach(k => presentes.add(k)));
+    const dedup = new Map(); juntos.saidas.forEach(s => { const k = (s.tipo === 'ext' ? 'e' : 'h') + s.chave; if (!dedup.has(k) && !presentes.has(k)) dedup.set(k, s); });
+    juntos.saidas = [...dedup.values()];
+    delete juntos._achados;
+    R = juntos; desenhar(); $m('#ai-aviso').textContent = '';
+  }
+  function secao(id, titulo, nota, linhas, marcado, cab) {
+    if (!linhas.length) return '';
+    return `<details open class="ai-sec"><summary><strong>${titulo} (${nBR(linhas.length)})</strong></summary><p class="bi-note" style="margin:4px 0 6px">${nota}</p>
+      <div style="display:flex;gap:8px;margin-bottom:6px"><button class="btn small" type="button" data-todos="${id}">Marcar todos</button><button class="btn small" type="button" data-nenhum="${id}">Desmarcar todos</button></div>
+      <div class="table-wrap bi-scroll" style="max-height:34vh;overflow:auto"><table><thead><tr><th style="width:34px"></th>${cab}</tr></thead><tbody>${linhas.map((l, i) => `<tr><td><input type="checkbox" data-sec="${id}" data-i="${i}"${marcado(l) ? ' checked' : ''} aria-label="Selecionar"></td>${l.html}</tr>`).join('')}</tbody></table></div></details>`;
+  }
+  function desenhar() {
+    const r = R, novos = Object.entries(r.novos);
+    const alt = r.alteracoes.map(a => ({ ...a, html: `<td class="nowrap"><strong>${esc(nomeIt(a.tipo, a.it))}</strong><div class="muted" style="font-size:12px">${esc(ondeIt(a.tipo, a.it))}</div></td><td>${esc(ROT_ALT[a.campo] || a.campo)}</td><td class="num nowrap">${esc(valor(a.campo, a.de))}</td><td class="num nowrap"><strong>${esc(valor(a.campo, a.para))}</strong>${a.antiga ? ' <span class="tg tg-a">mais antiga</span>' : ''}</td>` }));
+    const nov = novos.map(([id, d]) => ({ id, d, html: `<td class="nowrap"><strong>${esc(d.tipo === 'ext' ? d.tag : 'TAG ' + d.tag)}</strong> <span class="muted">· ${d.tipo === 'ext' ? 'Extintor' : 'Hidrante'}</span></td><td>${esc(d.tipo === 'ext' ? [d.local, d.localizacao].filter(Boolean).join(' · ') : [d.area, d.local].filter(Boolean).join(' · '))}</td><td class="nowrap">${esc(d.tipoCap || '')}${d.fab ? ' · Nº ' + esc(d.fab) : ''}</td><td>${esc(d.grupo || '—')}</td>` }));
+    const sai = r.saidas.map(s => ({ ...s, html: `<td class="nowrap"><strong>${esc(nomeIt(s.tipo, s.it))}</strong> <span class="muted">· ${s.tipo === 'ext' ? 'Extintor' : 'Hidrante'}</span></td><td>${esc(ondeIt(s.tipo, s.it))}</td><td>${esc(s.it._grupo || '—')}</td>` }));
+    const vol = r.voltas.map(v => ({ ...v, html: `<td class="nowrap"><strong>${esc(nomeIt(v.tipo, v.it))}</strong></td><td>${esc(ondeIt(v.tipo, v.it))}</td><td class="muted">${esc(v.it._retMotivo || 'Retirado')}</td>` }));
+    R._alt = alt; R._nov = nov; R._sai = sai; R._vol = vol;
+    $m('#ai-res').innerHTML = `<div class="kpis bi-kpis4" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+        <div class="kpi static"><span class="k-label">Itens lidos</span><span class="k-val">${nBR(r.itens)}</span><span class="k-sub">${nBR(r.folhas)} abas · ${nBR(r.arquivos.length)} arquivo(s)</span></div>
+        <div class="kpi static"><span class="k-label">Sem mudança</span><span class="k-val">${nBR(r.iguais)}</span><span class="k-sub">iguais ao sistema</span></div>
+        <div class="kpi static"><span class="k-label">Dados alterados</span><span class="k-val">${nBR(alt.length)}</span><span class="k-sub">campos diferentes</span></div>
+        <div class="kpi static"><span class="k-label">Novos</span><span class="k-val">${nBR(nov.length)}</span><span class="k-sub">fora do inventário</span></div>
+        <div class="kpi static"><span class="k-label">Não vieram</span><span class="k-val">${nBR(sai.length)}</span><span class="k-sub">possíveis saídas</span></div></div>
+      ${!alt.length && !nov.length && !sai.length && !vol.length ? '<div class="bi-empty">O inventário já está igual às planilhas. Nada para atualizar.</div>' : ''}
+      ${secao('alt', 'Dados alterados', 'O que está na planilha e é diferente do sistema. Datas mais antigas que as do sistema vêm desmarcadas — confira antes de aplicar.', alt, a => !a.antiga, '<th>Item</th><th>Campo</th><th>No sistema</th><th>Na planilha</th>')}
+      ${secao('nov', 'Equipamentos novos', 'Estão na planilha mas não no inventário. Entram com os dados da planilha, no grupo da planilha.', nov, () => true, '<th>Item</th><th>Local</th><th>Tipo / nº</th><th>Grupo</th>')}
+      ${secao('sai', 'Não vieram na planilha', 'Estão no sistema, nas mesmas locações e grupos, mas não aparecem nas planilhas enviadas. Marque só os que realmente saíram do controle (se faltou enviar alguma planilha, deixe desmarcado).', sai, () => false, '<th>Item</th><th>Local</th><th>Grupo</th>')}
+      ${secao('vol', 'Voltaram para a planilha', 'Estavam retirados do controle no sistema e aparecem de novo na planilha.', vol, () => true, '<th>Item</th><th>Local</th><th>Situação no sistema</th>')}`;
+    $m('#ai-res').querySelectorAll('[data-todos]').forEach(b => b.onclick = () => { $m('#ai-res').querySelectorAll(`[data-sec="${b.dataset.todos}"]`).forEach(c => c.checked = true); conta(); });
+    $m('#ai-res').querySelectorAll('[data-nenhum]').forEach(b => b.onclick = () => { $m('#ai-res').querySelectorAll(`[data-sec="${b.dataset.nenhum}"]`).forEach(c => c.checked = false); conta(); });
+    $m('#ai-res').querySelectorAll('[data-sec]').forEach(c => c.onchange = conta);
+    conta();
+  }
+  const sel = sec => [...$m('#ai-res').querySelectorAll(`[data-sec="${sec}"]:checked`)].map(c => +c.dataset.i);
+  function conta() { const n = ['alt', 'nov', 'sai', 'vol'].reduce((s, k) => s + sel(k).length, 0); $m('#ai-ok').disabled = !n; $m('#ai-ok').textContent = n ? `Aplicar ${nBR(n)} selecionado(s)` : 'Aplicar selecionados'; }
+  $m('#ai-ok').onclick = async () => {
+    const b = $m('#ai-ok'), av = $m('#ai-aviso'); b.disabled = true;
+    const arq = R.arquivos.join(', '), motivo = 'Atualização pela planilha do mês';
+    try {
+      const porItem = new Map(); sel('alt').forEach(i => { const a = R._alt[i], k = a.tipo + '|' + a.chave; if (!porItem.has(k)) porItem.set(k, { a, campos: {} }); porItem.get(k).campos[a.campo] = a.para; });
+      let n = 0, tot = porItem.size + sel('nov').length + sel('sai').length + sel('vol').length;
+      for (const { a, campos } of porItem.values()) { await gravarAlteracao(a.tipo, a.chave, a.it, campos, motivo, arq); av.textContent = `Gravando… ${++n} de ${tot}`; }
+      for (const i of sel('nov')) { const { id, d } = R._nov[i]; await S.salvarNovo(id, { ...d, origem: arq, em: new Date().toISOString(), por: meuId() }); av.textContent = `Gravando… ${++n} de ${tot}`; }
+      for (const i of sel('sai')) { const s = R._sai[i]; await gravarRetirada(s.tipo, s.chave, s.it, true, 'Não consta na planilha do mês', arq); av.textContent = `Gravando… ${++n} de ${tot}`; }
+      for (const i of sel('vol')) { const v = R._vol[i]; await gravarRetirada(v.tipo, v.chave, v.it, false, 'Voltou na planilha do mês', arq); av.textContent = `Gravando… ${++n} de ${tot}`; }
+      montar(); renderTudo(); try { renderBI(); renderCronograma(); } catch (e) {}
+      toast(`Inventário atualizado: ${nBR(porItem.size)} item(ns) com dados novos, ${nBR(sel('nov').length)} incluído(s), ${nBR(sel('sai').length)} retirado(s), ${nBR(sel('vol').length)} de volta.`);
+      bg.remove();
+    } catch (e) { console.warn(e); av.textContent = 'Parou no meio. Verifique a conexão e envie de novo: o que já foi aplicado não se repete.'; b.disabled = false; }
+  };
+}
+document.getElementById('dp-atualizar').addEventListener('click', abrirAtualizarInventario);
 
 /* --- editor de atribuição de inspeções (administrador) --- */
 function opcoesPessoas(sel) {
