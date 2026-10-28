@@ -311,3 +311,4 @@ Nova aba "Cronograma" (todos veem; só admin cria/atribui):
 - (v52) Celular/tablet: em vez da gaveta escondida, guia recolhida sempre visível à esquerda (faixa de ícones de 60 px: menu, telas, ferramentas, iniciais e Sair); o ☰ expande com os nomes e recolhe ao escolher uma tela, tocar fora ou Esc.
 - (v53) Indicadores → Equipamentos que exigem ação: colunas Nº fabricação e Unidade (como no cabeçalho da planilha, ex.: 130-Redução III = código da locação + área; mangueiras mostram a área), também na busca.
 - (v54) Removida a numeração interna do inventário (Nº 1–1.191) de todas as telas: lista de inspeção, topo do checklist, Alterar dados e Equipamentos que exigem ação; fica só a identificação do extintor (ex.: 131/18).
+- (v55) Equipamentos que exigem ação: filtro Tipo (lista e botões com a quantidade de cada tipo, ex.: CO2 06 KG 173), tipos padronizados (ABC 30KG = ABC 30 KG); as quantidades respeitam busca, equipamento e situação.

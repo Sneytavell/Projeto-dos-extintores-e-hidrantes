@@ -306,6 +306,10 @@ td.nowrap{white-space:nowrap}
   #tela-app > main.wrap{margin-left:232px;margin-right:0;max-width:none;padding-left:32px;padding-right:32px}
   #tela-app > main.wrap > *{max-width:1280px}
 }
+.bi-tipos{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.bi-tipo{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:transparent;color:inherit;border-radius:999px;padding:4px 6px 4px 12px;font:inherit;font-size:13px;cursor:pointer}
+.bi-tipo b{background:var(--bg-soft,rgba(127,127,127,.15));border-radius:999px;padding:1px 8px;font-size:12px}
+.bi-tipo:hover{border-color:var(--accent)}.bi-tipo.on{background:var(--accent);border-color:var(--accent);color:#fff}.bi-tipo.on b{background:rgba(255,255,255,.25)}
 .bp-dia{margin-top:10px;font-size:14px}.bp-dia summary{cursor:pointer;color:var(--accent);font-weight:600}
 .tgs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .tg{font-style:normal;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap;line-height:1.5}
@@ -681,7 +685,9 @@ td.nowrap{white-space:nowrap}
             <div class="field wide"><label for="bi-v-busca">Buscar</label><input id="bi-v-busca" type="text" placeholder="Nº, TAG, nº fabricação, unidade, local…"></div>
             <div class="field"><label for="bi-v-equip">Equipamento</label><select id="bi-v-equip"><option value="">Extintores e mangueiras</option><option value="Extintor">Só extintores</option><option value="Mangueira">Só mangueiras</option></select></div>
             <div class="field"><label for="bi-v-status">Situação</label><select id="bi-v-status"><option value="">Vencidos e até 10 dias</option><option value="Vencido">Só vencidos</option><option value="Vence em até 10 dias">Só até 10 dias</option></select></div>
+            <div class="field"><label for="bi-v-tipo">Tipo</label><select id="bi-v-tipo"><option value="">Todos os tipos</option></select></div>
           </div>
+          <div class="bi-tipos" id="bi-v-tipos"></div>
           <div class="table-wrap bi-scroll"><table><thead><tr><th>Equipamento</th><th>Tipo</th><th>Nº fabricação</th><th>Unidade</th><th>Local</th><th>Divisão</th><th>Motivo</th><th>Vencimento</th><th>Dias</th><th>Situação</th></tr></thead><tbody id="bi-tb-validade"></tbody></table></div>
           <div class="muted" id="bi-v-cont" style="font-size:13px"></div>
         </div>
@@ -2165,6 +2171,8 @@ document.querySelectorAll('#cg-modo button').forEach(b => b.onclick = () => { CG
 /* --- dados derivados --- */
 function statusPorDias(d) { return d === null ? 'Sem teste' : d < 0 ? 'Vencido' : d <= 10 ? 'Vence em até 10 dias' : 'Liberado'; }
 // Unidade como no cabeçalho da planilha: "130-Redução III" (código da locação + área)
+// tipo padronizado para agrupar ("ABC 30KG" = "ABC 30 KG")
+const tipoPadrao = t => String(t || '').toUpperCase().replace(/\s+/g, ' ').replace(/(\d)\s*(KG|LT|L)\b/g, '$1 $2').trim() || 'Sem tipo';
 function unidadeExt(it) { const a = String(it.area || '').trim(); if (/^\d{3}\s*-/.test(a)) return a; const m = /^(\d{2})/.exec(String(it.cod || '').trim()); return m && a ? m[1] + '0-' + a : a; }
 function validadeBI() {
   const rows = [];
@@ -2172,12 +2180,12 @@ function validadeBI() {
     const r = vencRecarga(it.recarga), t = vencTesteExt(it.teste);
     const due = r && t ? (r <= t ? r : t) : (r || t);
     const dias = due ? diasAte(due) : null;
-    rows.push({ equip: 'Extintor', nome: String(it.tag), tipo: it.tipo, fab: it.fab && !/^n\/?s$/i.test(it.fab) ? it.fab : '', unidade: unidadeExt(it), local: it.local, divisao: it.geral, motivo: due && r && due.getTime() === r.getTime() ? 'Recarga' : 'Teste hidrostático', venc: due ? isoDe(due) : '', dias, status: statusPorDias(dias) });
+    rows.push({ equip: 'Extintor', nome: String(it.tag), tipo: it.tipo, tipoG: tipoPadrao(it.tipo), fab: it.fab && !/^n\/?s$/i.test(it.fab) ? it.fab : '', unidade: unidadeExt(it), local: it.local, divisao: it.geral, motivo: due && r && due.getTime() === r.getTime() ? 'Recarga' : 'Teste hidrostático', venc: due ? isoDe(due) : '', dias, status: statusPorDias(dias) });
   });
   HID.forEach(it => {
     for (let k = 1; k <= Math.min(2, +it.qtdMang || 0); k++) {
       const t = it['teste' + k], due = vencMang(t), dias = due ? diasAte(due) : null;
-      rows.push({ equip: 'Mangueira', nome: `TAG ${it.tag} · Mangueira ${k}`, tipo: 'Mangueira ' + k, fab: it['fab' + k] || '', unidade: it.area || '', local: it.area + ' — ' + it.local, divisao: it.geral, motivo: 'Teste hidrostático', venc: due ? isoDe(due) : '', dias, status: statusPorDias(dias) });
+      rows.push({ equip: 'Mangueira', nome: `TAG ${it.tag} · Mangueira ${k}`, tipo: 'Mangueira ' + k, tipoG: 'Mangueira', fab: it['fab' + k] || '', unidade: it.area || '', local: it.area + ' — ' + it.local, divisao: it.geral, motivo: 'Teste hidrostático', venc: due ? isoDe(due) : '', dias, status: statusPorDias(dias) });
     }
   });
   return rows;
@@ -2244,9 +2252,15 @@ function renderValidade() {
   const ve = conta('Extintor', 'Vencido'), vm = conta('Mangueira', 'Vencido'), dz = conta('Extintor', 'Vence em até 10 dias') + conta('Mangueira', 'Vence em até 10 dias');
   $('#bi-tk-validade').innerHTML = `<b>${nBR(ve + vm)} equipamentos vencidos</b> (${nBR(ve)} extintores e ${nBR(vm)} mangueiras) e mais ${nBR(dz)} vencendo nos próximos 10 dias. Situação de ${fmt(isoDe(hoje()))}.`;
   // tabela
-  const q = norm($('#bi-v-busca').value), eq = $('#bi-v-equip').value, st = $('#bi-v-status').value;
-  const lista = rows.filter(r => (r.status === 'Vencido' || r.status === 'Vence em até 10 dias') && (!eq || r.equip === eq) && (!st || r.status === st) && (!q || norm([r.nome, r.tipo, r.fab, r.unidade, r.local, r.divisao].join(' ')).includes(q)))
-    .sort((a, b) => a.dias - b.dias);
+  const q = norm($('#bi-v-busca').value), eq = $('#bi-v-equip').value, st = $('#bi-v-status').value, selT = $('#bi-v-tipo');
+  const base = rows.filter(r => (r.status === 'Vencido' || r.status === 'Vence em até 10 dias') && (!eq || r.equip === eq) && (!st || r.status === st) && (!q || norm([r.nome, r.tipo, r.fab, r.unidade, r.local, r.divisao].join(' ')).includes(q)));
+  // quantidade por tipo (com os outros filtros aplicados)
+  const porTipo = {}; base.forEach(r => { porTipo[r.tipoG] = (porTipo[r.tipoG] || 0) + 1; });
+  const tiposOrd = Object.keys(porTipo).sort((a, b) => porTipo[b] - porTipo[a] || a.localeCompare(b, 'pt-BR', { numeric: true }));
+  let tp = selT.value; if (tp && !porTipo[tp]) tp = '';
+  selT.innerHTML = `<option value="">Todos os tipos (${nBR(base.length)})</option>` + tiposOrd.map(t => `<option value="${esc(t)}"${t === tp ? ' selected' : ''}>${esc(t)} (${nBR(porTipo[t])})</option>`).join('');
+  $('#bi-v-tipos').innerHTML = tiposOrd.length ? tiposOrd.map(t => `<button type="button" class="bi-tipo${t === tp ? ' on' : ''}" data-tipo="${esc(t)}"><span>${esc(t)}</span><b>${nBR(porTipo[t])}</b></button>`).join('') : '';
+  const lista = base.filter(r => !tp || r.tipoG === tp).sort((a, b) => a.dias - b.dias);
   const mostra = lista.slice(0, 300);
   $('#bi-tb-validade').innerHTML = mostra.length ? mostra.map(r => `<tr><td class="nowrap num">${esc(r.nome)}</td><td class="nowrap">${esc(r.tipo)}</td><td class="num nowrap">${esc(r.fab || '—')}</td><td class="nowrap">${esc(r.unidade || '—')}</td><td>${esc(r.local)}</td><td>${esc(r.divisao)}</td><td>${esc(r.motivo)}</td><td class="num nowrap">${fmt(r.venc)}</td><td class="num">${nBR(r.dias)}</td><td>${r.status === 'Vencido' ? chip('venc', '✕ Vencido') : chip('dez', '! Até 10 dias')}</td></tr>`).join('')
     : `<tr><td colspan="10"><div class="bi-empty">Nenhum equipamento vencido ou vencendo com esses filtros.</div></td></tr>`;
@@ -2260,7 +2274,8 @@ function renderValidade() {
   const sem = []; for (let w = 0; w < 12; w++) { const de = w * 7, ate = de + 6, l = rows.filter(r => r.dias !== null && r.dias >= de && r.dias <= ate); const ini = hoje(); ini.setDate(ini.getDate() + de); sem.push({ rot: fmtC(isoDe(ini)), e: l.filter(r => r.equip === 'Extintor').length, m: l.filter(r => r.equip === 'Mangueira').length }); }
   barrasSemanas($('#bi-ch-proximos'), sem);
 }
-['bi-v-busca', 'bi-v-equip', 'bi-v-status'].forEach(id => $('#' + id).addEventListener('input', () => renderValidade()));
+['bi-v-busca', 'bi-v-equip', 'bi-v-status', 'bi-v-tipo'].forEach(id => $('#' + id).addEventListener('input', () => renderValidade()));
+document.getElementById('bi-v-tipos').addEventListener('click', e => { const b = e.target.closest('[data-tipo]'); if (!b) return; const s = $('#bi-v-tipo'); s.value = s.value === b.dataset.tipo ? '' : b.dataset.tipo; renderValidade(); });
 
 function barrasEmpilhadas(el, rows) {
   const W = el.clientWidth || 560, rowH = 30, mT = 4, mB = 22, mR = 44;
