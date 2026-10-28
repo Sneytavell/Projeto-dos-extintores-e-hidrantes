@@ -277,21 +277,33 @@ td.nowrap{white-space:nowrap}
   .user .ut-sair:hover{color:var(--crit,#ff8a80);background:rgba(255,138,128,.1)}
   .user .ut-sair .ut-t{display:none}
 }
+#btn-menu{display:none}
 @media (max-width:999px){
-  .topbar{position:fixed!important;width:272px;max-width:86vw;z-index:60;transform:translateX(-110%);transition:transform .22s ease,visibility .22s;visibility:hidden}
-  body.menu-aberto .topbar{transform:none;visibility:visible;box-shadow:inset 3px 0 0 var(--accent),0 0 40px rgba(0,0,0,.45)}
-  .topbar .brand{flex:none!important;font-size:16px!important}
-  .topbar .wrap{gap:22px!important}
+  /* guia recolhida: faixa de ícones sempre visível à esquerda; ☰ expande */
+  .topbar{position:fixed!important;width:60px;z-index:60;overflow-x:hidden;transition:width .2s ease,box-shadow .2s}
+  body.menu-aberto .topbar{width:272px;max-width:86vw;box-shadow:inset 3px 0 0 var(--accent),0 0 40px rgba(0,0,0,.45)}
+  .topbar .wrap{gap:14px!important;padding:12px 8px 12px!important}
+  #btn-menu{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text);cursor:pointer;flex:none}
+  .topbar .brand{flex:none!important;font-size:15px!important;padding:0!important;gap:10px;white-space:nowrap}
+  .topbar .brand .logo{width:30px;height:30px;flex:none;margin-left:7px}
+  .modal-bg{z-index:70!important}.toast{z-index:80!important}
   .mainnav{order:0!important;flex-basis:auto!important}
-  .mainnav button{flex:none!important;padding:11px 12px!important;font-size:15px}
+  .mainnav button{flex:none!important;padding:11px 13px!important;font-size:15px;white-space:nowrap;position:relative}
+  .user-card{padding:8px 4px!important;border-radius:10px}
   .user-card .nome{max-width:150px!important}
-  .mob-fechar{display:grid;place-items:center;margin-left:auto;width:34px;height:34px;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
-  .mob-fechar:hover{background:var(--bg-hover)}
-  .mob-bar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:40;background:var(--card);border-bottom:1px solid var(--border);box-shadow:inset 0 3px 0 var(--accent);padding:10px 16px}
-  .mob-bar .brand{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-weight:700;font-size:16px;flex:1;min-width:0}
-  .mob-bar .brand .logo{width:28px;height:28px;border-radius:7px;background:var(--accent);display:grid;place-items:center;color:var(--accent-text);flex:none}
-  .mob-bar .mb-pag{font-size:13px;color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #btn-menu{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text);cursor:pointer;flex:none}
+  .user .ut-btn{padding:9px 13px!important;white-space:nowrap}
+  .mob-fechar,.mob-bar{display:none!important}
+  #tela-app > main.wrap{margin-left:60px;padding-left:14px;padding-right:14px}
+  body:not(.menu-aberto) .topbar .brand-t,
+  body:not(.menu-aberto) .mainnav button > span,
+  body:not(.menu-aberto) .user .ut-t,
+  body:not(.menu-aberto) .user .user-txt{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  body:not(.menu-aberto) .ut-lbl,body:not(.menu-aberto) .ut-sw{display:none!important}
+  body:not(.menu-aberto) .topbar .brand{display:none!important}
+  body:not(.menu-aberto) .user-card{flex-direction:column;gap:6px;background:transparent;border:0}
+  body:not(.menu-aberto) .user .ut-sair{padding:8px!important}
+  body:not(.menu-aberto) .mainnav button .nav-badge{position:absolute;top:2px;right:2px;margin:0;min-width:16px;height:16px;font-size:10px}
+  body:not(.menu-aberto) .user .ut-btn.on .ut-ic{color:var(--good,#3fb950)}
   .menu-fundo{display:block;position:fixed;inset:0;z-index:55;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s}
   body.menu-aberto .menu-fundo{opacity:1;pointer-events:auto}
   body.menu-aberto{overflow:hidden}
@@ -495,10 +507,11 @@ td.nowrap{white-space:nowrap}
 
 <!-- ===== App ===== -->
 <div id="tela-app" hidden>
-  <div class="mob-bar"><button id="btn-menu" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menu-lateral"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="brand"><div class="logo" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 3h6M12 3v3M8 9a4 4 0 0 1 8 0v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/></svg></div><span style="min-width:0;display:flex;flex-direction:column;line-height:1.15"><span>Extintores e Hidrantes</span><span class="mb-pag" id="mb-pag"></span></span></div></div>
+  <div class="mob-bar" hidden><span class="mb-pag" id="mb-pag"></span></div>
   <div class="menu-fundo" id="menu-fundo"></div>
   <header class="topbar" id="menu-lateral"><div class="wrap">
-    <div class="brand" style="display:flex;align-items:center"><div class="logo" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 3h6M12 3v3M8 9a4 4 0 0 1 8 0v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/></svg></div>Extintores e Hidrantes<button class="mob-fechar" id="btn-menu-fechar" type="button" aria-label="Fechar menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <button id="btn-menu" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menu-lateral" title="Abrir/fechar menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <div class="brand" style="display:flex;align-items:center"><div class="logo" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 3h6M12 3v3M8 9a4 4 0 0 1 8 0v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/></svg></div><span class="brand-t">Extintores e Hidrantes</span><button class="mob-fechar" id="btn-menu-fechar" type="button" aria-label="Fechar menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <nav class="mainnav">
       <button id="nav-painel" class="ativo" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel de status</span></button>
       <button id="nav-inspecao" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg><span>Nova inspeção</span></button>
@@ -1989,7 +2002,6 @@ document.getElementById('btn-sair').addEventListener('click', () => { menuMovel(
 function menuMovel(abrir) {
   document.body.classList.toggle('menu-aberto', abrir);
   $('#btn-menu').setAttribute('aria-expanded', abrir);
-  if (abrir) setTimeout(() => $('#menu-lateral .mainnav button.ativo')?.focus(), 50);
 }
 function paginaMovel() { const a = document.querySelector('.mainnav button.ativo span'); $('#mb-pag').textContent = a ? a.textContent : ''; }
 document.getElementById('btn-menu').addEventListener('click', () => menuMovel(!document.body.classList.contains('menu-aberto')));
