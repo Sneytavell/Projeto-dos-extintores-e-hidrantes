@@ -1485,7 +1485,13 @@ async function iniciar() {
       EU = { id: fb.uid, nome: 'Usuário', nomeConta: 'Usuário', avatar: '', dono: false, editor: false, podeGravar: true, papel: 'visualizador' };
     } catch (e) {
       console.warn(e);
-      $('#gate-msg').innerHTML = '<strong>Não foi possível conectar ao banco (Firebase).</strong><br>Verifique a internet e a configuração em firebase-config.js (Autenticação anônima ativada e regras do Firestore publicadas).';
+      const cod = String(e && (e.code || e.message) || e);
+      const dica = /admin-restricted|operation-not-allowed|configuration-not-found/.test(cod)
+        ? 'O login <b>Anônimo</b> não está ativado no Firebase: Authentication → Método de login → Anônimo → Ativar → Salvar.'
+        : /api-key|invalid-api-key/.test(cod) ? 'A configuração em firebase-config.js está incorreta (apiKey).'
+        : /network/.test(cod) ? 'Sem conexão com a internet ou o Firebase bloqueado nesta rede.'
+        : 'Verifique a configuração em firebase-config.js, o login Anônimo ativado e as regras do Firestore publicadas.';
+      $('#gate-msg').innerHTML = '<strong>Não foi possível conectar ao banco (Firebase).</strong><br>' + dica + '<br><small style="opacity:.7">Código: ' + esc(cod) + '</small>';
       return;
     }
   }

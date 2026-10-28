@@ -300,3 +300,4 @@ Nova aba "Cronograma" (todos veem; só admin cria/atribui):
 - "Importar backup" (só Administrador, no Firebase): traz o arquivo .json exportado do banco do Artifact (inspeções, ajustes, meses, planos, entregas, novos, pessoas).
 - Regras do Firestore em `firestore.rules` (leitura/gravação para quem abriu o site; o controle de acesso é pela matrícula/PIN).
 - (v43) Banco ligado: firebase-config.js preenchido com o projeto Firebase `extintores-albras`.
+- (v44) Erro de conexão com o Firebase mostra a causa provável (login Anônimo desativado, apiKey, rede) e o código do erro.

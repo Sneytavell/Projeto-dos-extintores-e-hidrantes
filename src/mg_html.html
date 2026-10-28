@@ -1,0 +1,22 @@
+      <div id="cr-mangueiras" class="kpi-group" style="gap:12px">
+        <p class="bi-take" id="mg-take"></p>
+        <div class="kpis mg-kpis" id="mg-kpis"></div>
+        <div class="toolbar">
+          <div class="field wide"><label for="mg-busca">Buscar</label><input id="mg-busca" type="text" placeholder="TAG, área, local…"></div>
+          <div class="field"><label for="mg-val">Validade</label><select id="mg-val"><option value="acao">Vencidas e vencendo em 30 dias</option><option value="vencida">Só vencidas</option><option value="30">Vencem em até 30 dias</option><option value="">Todas as mangueiras</option></select></div>
+          <div class="field"><label for="mg-etapa">Etapa</label><select id="mg-etapa"><option value="">Todas as etapas</option></select></div>
+          <div class="field"><label for="mg-grupo">Grupo</label><select id="mg-grupo"></select></div>
+        </div>
+        <div class="banner mg-lote" id="mg-lote" hidden>
+          <strong id="mg-lote-n"></strong>
+          <select id="mg-lote-resp" aria-label="Responsável"></select>
+          <input id="mg-lote-data" type="date" aria-label="Data programada">
+          <button class="btn primary small" type="button" id="mg-lote-ok">Atribuir selecionadas</button>
+          <button class="btn small" type="button" id="mg-lote-limpar">Limpar seleção</button>
+        </div>
+        <div class="table-wrap bi-scroll mg-tabela"><table><thead><tr>
+          <th class="mg-adm"><input type="checkbox" id="mg-todas" aria-label="Selecionar todas as mangueiras da lista"></th>
+          <th>Mangueira</th><th>Local</th><th>Grupo</th><th>Último teste</th><th>Vencimento</th><th>Responsável</th><th>Programada</th><th>Etapa</th><th></th>
+        </tr></thead><tbody id="mg-tbody"></tbody></table></div>
+        <div class="muted" id="mg-cont" style="font-size:13px"></div>
+      </div>

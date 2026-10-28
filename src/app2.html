@@ -1,0 +1,876 @@
+<title>Controle de Extintores e Hidrantes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: barra de topo fixa + conteúdo em coluna única (máx. 1200px); painéis por aba
+   Cores: sistema ALBRAS — azul institucional #2E3192, cinza #A8A9AD, branco */
+:root{
+  --bg:#f3f4f8; --card:#ffffff; --border:#d9dbe5; --text:#1a1c48; --muted:#5d6072;
+  --accent:#2e3192; --accent-hover:#22256f; --accent-text:#ffffff;
+  --bg-soft:#eceef6; --bg-hover:#e1e3f1; --shadow-tint:rgba(46,49,146,.12);
+  --bar-1:#2e3192; --bar-2:#a8a9ad;
+  --good-bg:#d9dbf3; --good-text:#2e3192; --good:#a3a6dc;
+  --warn-bg:#a8a9ad; --warn-text:#16183f; --warn:#7d7f88;
+  --crit-bg:#2e3192; --crit-text:#ffffff; --crit:#2e3192;
+  --neu-bg:#eeeef0; --neu-text:#666872; --neu:#d0d1d5;
+  --err:#b42318; --err-bg:#fdecea; --ok:#15803d; --ok-bg:#e8f6ec;
+  --font-body:"Roboto",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --font-display:"Roboto Condensed","Roboto",system-ui,"Segoe UI",Arial,sans-serif;
+  --radius:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1129; --card:#161937; --border:#2a2e5a; --text:#e8e9f4; --muted:#a3a5bd;
+  --accent:#8085e8; --accent-hover:#9da1f0; --accent-text:#0d0f2c;
+  --bg-soft:#1c2044; --bg-hover:#252a55; --shadow-tint:rgba(0,0,0,.4);
+  --bar-1:#8085e8; --bar-2:#a8a9ad;
+  --good-bg:#323889; --good-text:#e2e4ff; --good:#4a4f9e;
+  --warn-bg:#6e7079; --warn-text:#ffffff; --warn:#a8a9ad;
+  --crit-bg:#c9cbf6; --crit-text:#161a52; --crit:#c9cbf6;
+  --neu-bg:#24262f; --neu-text:#a2a4ad; --neu:#454753;
+  --err:#ff8a80; --err-bg:#3a1714; --ok:#7fdc9c; --ok-bg:#12301d;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1129; --card:#161937; --border:#2a2e5a; --text:#e8e9f4; --muted:#a3a5bd;
+  --accent:#8085e8; --accent-hover:#9da1f0; --accent-text:#0d0f2c;
+  --bg-soft:#1c2044; --bg-hover:#252a55; --shadow-tint:rgba(0,0,0,.4);
+  --bar-1:#8085e8; --bar-2:#a8a9ad;
+  --good-bg:#323889; --good-text:#e2e4ff; --good:#4a4f9e;
+  --warn-bg:#6e7079; --warn-text:#ffffff; --warn:#a8a9ad;
+  --crit-bg:#c9cbf6; --crit-text:#161a52; --crit:#c9cbf6;
+  --neu-bg:#24262f; --neu-text:#a2a4ad; --neu:#454753;
+  --err:#ff8a80; --err-bg:#3a1714; --ok:#7fdc9c; --ok-bg:#12301d;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Botões e campos */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--card);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:500}
+.btn:hover{background:var(--bg-hover)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}
+.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],select,textarea{
+  width:100%;border:1px solid var(--border);background:var(--card);border-radius:8px;padding:8px 10px;min-width:0}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--shadow-tint)}
+textarea{resize:vertical;min-height:80px}
+
+/* Login */
+#tela-login{min-height:100%;display:grid;place-items:center;padding-block:48px}
+.auth-card{width:100%;max-width:400px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;box-shadow:0 8px 30px var(--shadow-tint);display:flex;flex-direction:column;gap:16px}
+.auth-brand{display:flex;align-items:center;gap:10px}
+.auth-brand .logo{width:36px;height:36px;border-radius:9px;background:var(--accent);display:grid;place-items:center;color:var(--accent-text)}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--bg-soft);border-radius:8px;padding:3px}
+.auth-tabs button{border:0;background:none;padding:7px;border-radius:6px;cursor:pointer;font-weight:500;color:var(--muted)}
+.auth-tabs button.ativo{background:var(--card);color:var(--text);box-shadow:0 1px 3px var(--shadow-tint)}
+.msg{padding:8px 10px;border-radius:8px;font-size:13px}
+.msg.erro{background:var(--err-bg);color:var(--err)}
+.msg.ok{background:var(--ok-bg);color:var(--ok)}
+form{display:flex;flex-direction:column;gap:12px;margin:0}
+
+/* Topo */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--card);border-bottom:1px solid var(--border);box-shadow:inset 0 3px 0 var(--accent)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--card)}
+.topbar .wrap{display:flex;align-items:center;gap:16px;padding-block:10px;flex-wrap:wrap}
+.topbar .brand{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-weight:700;font-size:17px}
+.topbar .brand .logo{width:28px;height:28px;border-radius:7px;background:var(--accent);display:grid;place-items:center;color:var(--accent-text)}
+.mainnav{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+.mainnav button{white-space:nowrap;border:0;background:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:500;color:var(--muted)}
+.mainnav button:hover{background:var(--bg-hover);color:var(--text)}
+.mainnav button.ativo{background:var(--accent);color:var(--accent-text)}
+.user{display:flex;align-items:center;gap:8px;font-size:13px}
+
+main{padding-block:20px 48px;display:flex;flex-direction:column;gap:18px}
+.subtabs{display:flex;gap:2px;border-bottom:1px solid var(--border);overflow-x:auto}
+.subtabs button{border:0;background:none;padding:10px 14px;cursor:pointer;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.subtabs button:hover{color:var(--text)}
+.subtabs button.ativo{color:var(--accent);border-bottom-color:var(--accent)}
+.toolbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.toolbar .field{flex:1 1 160px}
+.toolbar .field.wide{flex:2 1 240px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.section-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.section-title h2{font-size:20px}
+
+/* KPIs */
+.kpi-group{display:flex;flex-direction:column;gap:10px}
+.kpi-group h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-family:var(--font-body);font-weight:500}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+.kpi:hover{background:var(--bg-hover);box-shadow:0 4px 14px var(--shadow-tint)}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--stripe,transparent)}
+.kpi .k-label{font-size:12px;color:var(--muted);font-weight:500}
+.kpi .k-val{font-family:var(--font-display);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.kpi .k-sub{font-size:12px;color:var(--muted)}
+.kpi[data-s="Vencido"]{--stripe:var(--crit)} .kpi[data-s="Atenção"]{--stripe:var(--warn)}
+.kpi[data-s="Regular"]{--stripe:var(--good)} .kpi[data-s="Sem teste"]{--stripe:var(--neu)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.bars{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.bar-row{display:grid;grid-template-columns:minmax(0,180px) 1fr 44px;gap:10px;align-items:center;font-size:13px}
+.bar-row .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{height:14px;background:var(--bg-soft);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.bar-row .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
+
+/* Tabelas */
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{background:var(--bg-soft);text-align:left;font-weight:500;color:var(--muted);padding:9px 10px;white-space:nowrap;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+td{padding:8px 10px;border-top:1px solid var(--border);vertical-align:top}
+tbody tr:hover{background:var(--bg-hover)}
+td.nowrap{white-space:nowrap}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px}
+.pager .btns{display:flex;gap:6px}
+
+/* Badges de status */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap}
+.b-Regular{background:var(--good-bg);color:var(--good-text)}
+.b-Atenção{background:var(--warn-bg);color:var(--warn-text)}
+.b-Vencido{background:var(--crit-bg);color:var(--crit-text)}
+.b-Sem{background:var(--neu-bg);color:var(--neu-text)}
+
+/* Inspeção */
+.insp-grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:16px;align-items:start}
+.finder{display:flex;flex-direction:column;gap:10px}
+.results{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);max-height:560px;overflow:auto}
+.results .item{border:0;border-bottom:1px solid var(--border);background:none;text-align:left;padding:9px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.results .item:hover{background:var(--bg-hover)}
+.results .item.sel{background:var(--bg-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.results .item .t{font-weight:500}
+.results .item .s{font-size:12px;color:var(--muted)}
+.results.grid{flex-direction:row;flex-wrap:wrap;gap:8px;padding:10px;align-content:flex-start}
+.results.grid .item{border:1px solid var(--border);border-radius:8px;background:var(--bg-soft);width:calc(50% - 4px);padding:9px 10px}
+.results.grid .item:hover{background:var(--bg-hover);box-shadow:0 3px 10px var(--shadow-tint)}
+.results.grid .item .t{font-family:var(--font-display);font-size:17px}
+.results.grid .item .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.results .nota{padding:12px;color:var(--muted);font-size:13px;width:100%}
+.empty-state{padding:40px 20px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:6px;align-items:center}
+.empty-state strong{color:var(--text);font-size:15px}
+.item-card{display:flex;flex-direction:column;gap:12px}
+.item-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start}
+.item-head h2{font-size:24px}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 16px}
+.facts div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.facts dt{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.facts dd{margin:0;font-weight:500;overflow-wrap:anywhere}
+.check-group{display:flex;flex-direction:column;gap:8px}
+.check-group h3{font-size:15px;display:flex;align-items:center;gap:8px}
+.check-group h3 small{font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--muted)}
+.checklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px 18px}
+.ck{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
+.ck span{min-width:0}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;flex-shrink:0}
+.seg button{border:0;background:var(--card);padding:5px 9px;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);min-width:34px}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button:hover{background:var(--bg-hover)}
+.seg button.on[data-v="C"],.seg button.on[data-v="Regular"],.seg button.on[data-v="Sim"]{background:var(--good-bg);color:var(--good-text)}
+.seg button.on[data-v="NV"],.seg button.on[data-v="Atenção"]{background:var(--warn-bg);color:var(--warn-text)}
+.seg button.on[data-v="NC"],.seg button.on[data-v="Vencido"]{background:var(--crit-bg);color:var(--crit-text)}
+.seg button.on[data-v="NA"],.seg button.on[data-v="Sem teste"],.seg button.on[data-v="Não"]{background:var(--neu-bg);color:var(--neu-text)}
+.form-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;align-items:center}
+.legend{font-size:12px;color:var(--muted)}
+.hist{display:flex;flex-direction:column;gap:8px}
+.hist-item{border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.hist-item .top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.divider{height:1px;background:var(--border);border:0;margin:4px 0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:50;font-weight:500;max-width:calc(100% - 32px)}
+.modal-bg{position:fixed;inset:0;background:rgba(15,17,41,.5);display:grid;place-items:center;z-index:40;padding:16px}
+.modal{background:var(--card);border-radius:12px;padding:22px;max-width:480px;width:100%;display:flex;flex-direction:column;gap:12px;border:1px solid var(--border)}
+
+@media (max-width:900px){
+  .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .charts,.insp-grid{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bar-row{grid-template-columns:minmax(0,110px) 1fr 40px}
+  .results.grid .item{width:100%}
+  .user .nome{display:none}
+  .topbar .wrap{gap:8px}
+  .topbar .brand{flex:1;font-size:15px}
+  .mainnav{order:3;flex-basis:100%}
+  .mainnav button{flex:1;padding:7px 8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Acesso e perfis */
+.papel{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.papel.admin{background:var(--accent);color:var(--accent-text)}
+.papel.inspetor{background:var(--good-bg);color:var(--good-text)}
+.papel.visualizador{background:var(--neu-bg);color:var(--neu-text)}
+.avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--bg-soft)}
+.banner{border:1px solid var(--border);background:var(--bg-soft);border-radius:var(--radius);padding:10px 14px;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.banner strong{color:var(--text)}
+.gate{min-height:70vh;display:grid;place-items:center;padding-block:48px}
+.gate .auth-card{text-align:left}
+.pessoa{display:flex;align-items:center;gap:10px;min-width:0}
+.pessoa .nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roles-help{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.roles-help .panel{display:flex;flex-direction:column;gap:6px;padding:14px}
+.roles-help p{margin:0;font-size:13px;color:var(--muted)}
+.search-hits{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.search-hits button{display:flex;align-items:center;gap:10px;border:0;border-bottom:1px solid var(--border);background:var(--card);padding:8px 10px;cursor:pointer;text-align:left}
+.search-hits button:hover{background:var(--bg-hover)}
+@media (max-width:700px){.roles-help{grid-template-columns:1fr}}
+</style>
+
+<!-- ===== Tela de carregamento / bloqueio ===== -->
+<div id="tela-gate" class="wrap gate">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="logo" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6M12 3v3M8 9a4 4 0 0 1 8 0v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/></svg></div>
+      <div><h1 style="font-size:20px">Extintores e Hidrantes</h1><div class="muted" style="font-size:13px">ALBRAS · Prevenção contra incêndio</div></div>
+    </div>
+    <div id="gate-msg" class="muted">Verificando seu acesso…</div>
+  </div>
+</div>
+
+<!-- ===== App ===== -->
+<div id="tela-app" hidden>
+  <header class="topbar"><div class="wrap">
+    <div class="brand"><div class="logo" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 3h6M12 3v3M8 9a4 4 0 0 1 8 0v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/></svg></div>Extintores e Hidrantes</div>
+    <nav class="mainnav">
+      <button id="nav-painel" class="ativo" type="button">Painel de status</button>
+      <button id="nav-inspecao" type="button">Nova inspeção</button>
+      <button id="nav-acessos" type="button">Acessos</button>
+    </nav>
+    <div class="user">
+      <button id="btn-importar" class="btn small" type="button" title="Reimportar planilha de inventário (.xlsx)">Atualizar dados</button>
+      <img class="avatar" id="user-avatar" alt="">
+      <span class="nome" id="user-nome"></span>
+      <span class="papel" id="user-papel"></span>
+    </div>
+    <input id="file-import" type="file" accept=".xlsx,.xls" hidden>
+  </div></header>
+
+  <main class="wrap">
+    <div class="banner" id="banner-local" hidden><strong>Modo local.</strong> Esta visualização não está conectada ao banco compartilhado: os registros ficam só neste navegador e todos os perfis estão liberados.</div>
+    <div class="banner" id="banner-somente" hidden><strong>Somente leitura.</strong> <span id="banner-somente-txt"></span></div>
+
+    <!-- PAINEL -->
+    <section id="area-painel" class="kpi-group" style="gap:18px">
+      <nav class="subtabs" id="subtabs-painel">
+        <button type="button" data-tab="geral" class="ativo">Visão geral</button>
+        <button type="button" data-tab="ext">Extintores</button>
+        <button type="button" data-tab="hid">Hidrantes</button>
+      </nav>
+
+      <div id="tab-geral" class="kpi-group" style="gap:20px">
+        <div class="kpi-group"><h3>Extintores <span class="muted" style="text-transform:none;letter-spacing:0">· status estimado por recarga (1 ano) e teste hidrostático (5 anos)</span></h3><div class="kpis" id="kpis-ext"></div></div>
+        <div class="kpi-group"><h3>Hidrantes <span class="muted" style="text-transform:none;letter-spacing:0">· pior status entre as mangueiras do ponto</span></h3><div class="kpis" id="kpis-hid"></div></div>
+        <div class="charts">
+          <div class="panel"><div class="section-title"><h2 style="font-size:16px">Extintores por divisão</h2><span class="muted num" id="ch-ext-tot"></span></div><div class="bars" id="chart-ext"></div></div>
+          <div class="panel"><div class="section-title"><h2 style="font-size:16px">Pontos de hidrante por divisão</h2><span class="muted num" id="ch-hid-tot"></span></div><div class="bars" id="chart-hid"></div></div>
+        </div>
+      </div>
+
+      <div id="tab-ext" class="kpi-group" style="gap:12px" hidden>
+        <div class="toolbar">
+          <div class="field wide"><label for="ext-busca">Buscar</label><input id="ext-busca" type="text" placeholder="Nº, locação, localização, fabricação…"></div>
+          <div class="field"><label for="ext-div">Divisão</label><select id="ext-div"></select></div>
+          <div class="field"><label for="ext-tipo">Tipo</label><select id="ext-tipo"></select></div>
+          <div class="field"><label for="ext-status">Status</label><select id="ext-status"></select></div>
+          <button class="btn" type="button" id="ext-csv">Copiar CSV</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Nº</th><th>Divisão</th><th>Área</th><th>Local</th><th>Localização</th><th>Locação</th><th>Tipo / Capacidade</th><th>Nº Fabricação</th><th>Última recarga</th><th>Último teste</th><th>Status</th></tr></thead><tbody id="ext-tbody"></tbody></table></div>
+        <div class="pager" id="ext-pager"></div>
+      </div>
+
+      <div id="tab-hid" class="kpi-group" style="gap:12px" hidden>
+        <div class="toolbar">
+          <div class="field wide"><label for="hid-busca">Buscar</label><input id="hid-busca" type="text" placeholder="Área, local, TAG…"></div>
+          <div class="field"><label for="hid-div">Divisão</label><select id="hid-div"></select></div>
+          <div class="field"><label for="hid-status">Status</label><select id="hid-status"></select></div>
+          <button class="btn" type="button" id="hid-csv">Copiar CSV</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Divisão</th><th>Área</th><th>Local</th><th>TAG</th><th>Abrigos</th><th>Mangueiras</th><th>Teste mang. 1</th><th>Mangueira 1</th><th>Teste mang. 2</th><th>Mangueira 2</th><th>Status do ponto</th></tr></thead><tbody id="hid-tbody"></tbody></table></div>
+        <div class="pager" id="hid-pager"></div>
+      </div>
+    </section>
+
+    <!-- INSPEÇÃO -->
+    <section id="area-inspecao" class="kpi-group" style="gap:18px" hidden>
+      <nav class="subtabs" id="subtabs-insp">
+        <button type="button" data-insp="ext" class="ativo">Inspeção de extintor</button>
+        <button type="button" data-insp="hid">Inspeção de hidrante</button>
+      </nav>
+      <div class="insp-grid">
+        <div class="finder">
+          <div class="field"><label for="f-grupo">Grupo (opcional)</label><select id="f-grupo"></select></div>
+          <div class="field"><label for="f-locacao">Locação (opcional)</label><select id="f-locacao"></select></div>
+          <div class="field"><label for="f-busca">Buscar</label><input id="f-busca" type="text" placeholder="Digite ao menos 2 caracteres"></div>
+          <div class="results" id="f-results"></div>
+        </div>
+        <div class="panel" id="insp-form"></div>
+      </div>
+    </section>
+
+    <!-- ACESSOS -->
+    <section id="area-acessos" class="kpi-group" style="gap:18px" hidden>
+      <div class="section-title"><h2>Acessos e perfis</h2><span class="muted" id="acessos-resumo"></span></div>
+      <div class="roles-help">
+        <div class="panel"><span class="papel admin" style="align-self:flex-start">Administrador</span><p>Vê tudo, registra inspeções, atualiza o inventário e define o perfil das outras pessoas. É quem tem acesso de Editor (ou é dono) no compartilhamento desta página.</p></div>
+        <div class="panel"><span class="papel inspetor" style="align-self:flex-start">Inspetor</span><p>Consulta o painel e registra inspeções de extintores e hidrantes. Precisa de acesso de Colaborador no compartilhamento.</p></div>
+        <div class="panel"><span class="papel visualizador" style="align-self:flex-start">Visualizador</span><p>Só consulta o painel de status. É o perfil de quem ainda não recebeu outro.</p></div>
+      </div>
+      <div class="panel kpi-group" style="gap:10px">
+        <h3 style="font-size:15px;font-family:var(--font-display);text-transform:none;letter-spacing:0;color:var(--text)">Adicionar pessoa</h3>
+        <div class="field"><label for="ac-busca">Buscar colega pelo nome ou e-mail</label><input id="ac-busca" type="text" placeholder="Digite um nome…" autocomplete="off"></div>
+        <div class="search-hits" id="ac-hits" hidden></div>
+        <p class="muted" style="margin:0;font-size:12px">Definir o perfil aqui não envia convite. A pessoa também precisa ter a página compartilhada com ela.</p>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Pessoa</th><th>Perfil</th><th>Último acesso</th></tr></thead><tbody id="ac-tbody"></tbody></table></div>
+    </section>
+  </main>
+</div>
+<div id="modal-root"></div>
+
+<script>
+const SEED = __DATA__;
+
+/* ---------- utilidades ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+const semAcento = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+const fmt = iso => { if (!iso) return '—'; const [y, m, d] = iso.slice(0, 10).split('-'); return `${d}/${m}/${y}`; };
+const hoje = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+const addAnos = (iso, n) => { const d = new Date(iso + 'T00:00:00'); d.setFullYear(d.getFullYear() + n); return d; };
+const isoDe = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const distintos = (arr, f) => [...new Set(arr.map(f).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+function toast(t) { const el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 3200); }
+function opts(sel, list, todos) { const v = sel.value; sel.innerHTML = `<option value="">${todos}</option>` + list.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join(''); if (list.includes(v)) sel.value = v; }
+function badge(s) { const ic = { 'Regular': '✓', 'Atenção': '!', 'Vencido': '✕', 'Sem teste': '–' }[s] || ''; const cls = s === 'Sem teste' ? 'b-Sem' : 'b-' + s; return `<span class="badge ${cls}">${ic} ${esc(s)}</span>`; }
+const quando = iso => iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+function hashKey(s) { let h1 = 0x811c9dc5, h2 = 5381; for (const c of s) { const k = c.charCodeAt(0); h1 = Math.imul(h1 ^ k, 16777619) >>> 0; h2 = ((h2 << 5) + h2 + k) >>> 0; } return 'h' + h1.toString(16) + h2.toString(16); }
+async function copiar(txt) {
+  try { await navigator.clipboard.writeText(txt); toast('CSV copiado. Cole no Excel com Ctrl+V.'); }
+  catch (e) {
+    const bg = document.createElement('div'); bg.className = 'modal-bg';
+    bg.innerHTML = `<div class="modal"><h2 style="font-size:18px">Copiar CSV</h2><p class="muted" style="margin:0">Selecione o texto abaixo e copie com Ctrl+C.</p><textarea id="csv-txt" style="min-height:220px"></textarea><div class="form-actions"><button class="btn" type="button">Fechar</button></div></div>`;
+    $('#modal-root').appendChild(bg); const ta = bg.querySelector('textarea'); ta.value = txt; ta.select();
+    bg.querySelector('button').onclick = () => bg.remove();
+  }
+}
+const csvCell = v => { v = String(v ?? ''); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+
+/* ---------- armazenamento: banco compartilhado (nuvem) ou navegador (local) ---------- */
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+
+const S = {
+  modo: 'local', db: null, user: null, uid: null,
+  /* inventário importado */
+  async lerInventario() {
+    if (this.modo === 'local') return lsGet('inv_local_v2', null);
+    const meta = await this.db.doc('inventario/meta').get();
+    if (!meta.exists) return null;
+    const m = meta.data(), out = { em: m.em, ext: [], hid: [] };
+    for (const [tipo, n] of [['ext', m.partesExt], ['hid', m.partesHid]]) {
+      for (let i = 0; i < n; i++) { const d = await this.db.doc(`inventario/meta/${tipo}/p${i}`).get(); if (d.exists) out[tipo].push(...d.data().linhas); }
+    }
+    return out;
+  },
+  async salvarInventario(ext, hid) {
+    const em = new Date().toISOString();
+    if (this.modo === 'local') { lsSet('inv_local_v2', { em, ext, hid }); return em; }
+    const partes = (arr, tam) => { const r = []; for (let i = 0; i < arr.length; i += tam) r.push(arr.slice(i, i + tam)); return r; };
+    const pe = partes(ext, 400), ph = partes(hid, 400);
+    for (let i = 0; i < pe.length; i++) await this.db.doc(`inventario/meta/ext/p${i}`).set({ linhas: pe[i] });
+    for (let i = 0; i < ph.length; i++) await this.db.doc(`inventario/meta/hid/p${i}`).set({ linhas: ph[i] });
+    await this.db.doc('inventario/meta').set({ em, por: this.uid, partesExt: pe.length, partesHid: ph.length });
+    return em;
+  },
+  /* ajustes de datas/status feitos nas inspeções */
+  ouvirAjustes(cb) {
+    if (this.modo === 'local') { cb('ext', lsGet('aj_ext_v2', {})); cb('hid', lsGet('aj_hid_v2', {})); return; }
+    for (const t of ['ext', 'hid']) this.db.collection('ajustes_' + t).onSnapshot(s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(t, o); }, e => console.warn(e));
+  },
+  async salvarAjuste(t, k, dados) {
+    dados = { ...dados, em: new Date().toISOString() };
+    if (this.modo === 'local') { const o = lsGet('aj_' + t + '_v2', {}); o[k] = { ...(o[k] || {}), ...dados }; lsSet('aj_' + t + '_v2', o); return; }
+    const ref = this.db.doc(`ajustes_${t}/${k}`), cur = await ref.get();
+    await ref.set({ ...(cur.exists ? cur.data() : {}), ...dados });
+  },
+  /* histórico de inspeções: um documento por item */
+  ouvirInspecoes(t, k, cb) {
+    if (this.modo === 'local') { cb(lsGet('insp_' + t + '_v2', {})[k] || []); return () => {}; }
+    return this.db.doc(`insp_${t}/${k}`).onSnapshot(s => cb(s.exists ? (s.data().registros || []) : []), e => { console.warn(e); cb([]); });
+  },
+  async addInspecao(t, k, reg) {
+    if (this.modo === 'local') { const o = lsGet('insp_' + t + '_v2', {}); (o[k] = o[k] || []).push(reg); lsSet('insp_' + t + '_v2', o); return; }
+    const ref = this.db.doc(`insp_${t}/${k}`), cur = await ref.get();
+    const regs = cur.exists ? [...(cur.data().registros || [])] : [];
+    regs.push(reg); await ref.set({ registros: regs.slice(-120) });
+  },
+  /* perfis e acessos */
+  ouvirPerfis(cb) { if (this.modo === 'local') return cb({}); this.db.collection('perfis').onSnapshot(s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(o); }, e => console.warn(e)); },
+  ouvirAcessos(cb) { if (this.modo === 'local') return cb({}); this.db.collection('acessos').onSnapshot(s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(o); }, e => console.warn(e)); },
+  async setPerfil(uid, papel) { await this.db.doc('perfis/' + uid).set({ papel, em: new Date().toISOString(), por: this.uid }); },
+  async registrarAcesso(admin) { try { await this.db.doc('acessos/' + this.uid).set({ ultimo: new Date().toISOString(), admin: !!admin }); } catch (e) { /* visualizadores do compartilhamento não gravam */ } }
+};
+
+/* ---------- dados ---------- */
+const EXT_F = ['n', 'cod', 'geral', 'area', 'local', 'localizacao', 'tag', 'tipo', 'fab', 'recarga', 'teste'];
+const HID_F = ['geral', 'area', 'local', 'tag', 'hidrante', 'abrigos', 'qtdMang', 'tamanho', 'teste1', 'teste2', 'm1', 'm2'];
+const toObj = (row, f) => Object.fromEntries(f.map((k, i) => [k, row[i]]));
+let BASE_EXT = SEED.ext.map(r => toObj(r, EXT_F)), BASE_HID = SEED.hid.map(r => toObj(r, HID_F)), BASE_EM = '';
+let AJ = { ext: {}, hid: {} };
+let EXT = [], HID = [];
+const chaveHid = it => hashKey(String(it.tag) + '|' + norm(it.local));
+
+function statusExt(it) {
+  const h = hoje(), lim = new Date(h); lim.setDate(lim.getDate() + 60);
+  const prox = []; if (it.recarga) prox.push(addAnos(it.recarga, 1)); if (it.teste) prox.push(addAnos(it.teste, 5));
+  if (!prox.length) return 'Sem teste';
+  const min = new Date(Math.min(...prox));
+  return min < h ? 'Vencido' : min <= lim ? 'Atenção' : 'Regular';
+}
+const ORD = { 'Vencido': 3, 'Atenção': 2, 'Regular': 1, 'Sem teste': 0 };
+function statusHid(it) {
+  const l = [it.m1]; if (+it.qtdMang >= 2) l.push(it.m2);
+  return l.filter(Boolean).reduce((a, b) => (ORD[b] ?? 0) > (ORD[a] ?? 0) ? b : a, 'Sem teste');
+}
+function montar() {
+  const vale = a => a && (!BASE_EM || a.em > BASE_EM);
+  EXT = BASE_EXT.map(b => { const a = AJ.ext[String(b.n)]; const it = { ...b }; if (vale(a)) { if (a.recarga) it.recarga = a.recarga; if (a.teste) it.teste = a.teste; } return it; });
+  HID = BASE_HID.map((b, i) => { const it = { ...b, _idx: i, _key: chaveHid(b) }; const a = AJ.hid[it._key]; if (vale(a)) ['teste1', 'teste2', 'm1', 'm2'].forEach(f => { if (a[f]) it[f] = a[f]; }); return it; });
+  EXT.forEach(it => { it._status = statusExt(it); it._grupo = SEED.gExt[it.n] || ''; });
+  HID.forEach(it => { it._status = statusHid(it); it._grupo = SEED.gHid[String(it.tag) + '|' + norm(it.local)] || ''; });
+}
+
+/* ---------- perfil do usuário atual ---------- */
+let EU = { id: null, nome: 'Você', avatar: '', dono: false, editor: false, podeGravar: true, papel: 'admin' };
+let PERFIS = {}, ACESSOS = {};
+const NOMES_PAPEL = { admin: 'Administrador', inspetor: 'Inspetor', visualizador: 'Visualizador' };
+function papelDe(uid) {
+  if (S.modo === 'local') return 'admin';
+  if (uid === EU.id && (EU.dono || EU.editor)) return 'admin';
+  if (uid !== EU.id && ACESSOS[uid]?.admin) return 'admin';
+  const p = PERFIS[uid]?.papel; return p === 'inspetor' ? 'inspetor' : 'visualizador';
+}
+const pode = {
+  inspecionar: () => EU.papel !== 'visualizador',
+  administrar: () => EU.papel === 'admin'
+};
+function aplicarPapel() {
+  EU.papel = papelDe(EU.id);
+  const p = $('#user-papel'); p.className = 'papel ' + EU.papel; p.textContent = NOMES_PAPEL[EU.papel];
+  $('#nav-inspecao').hidden = !pode.inspecionar();
+  $('#nav-acessos').hidden = !pode.administrar() || S.modo === 'local';
+  $('#btn-importar').hidden = !pode.administrar();
+  const somente = S.modo === 'nuvem' && pode.inspecionar() && EU.podeGravar === false;
+  $('#banner-somente').hidden = !somente;
+  if (somente) $('#banner-somente-txt').textContent = 'Seu perfil é ' + NOMES_PAPEL[EU.papel] + ', mas esta página foi compartilhada com você só para visualização. Peça ao responsável acesso de Colaborador para poder salvar inspeções.';
+  if (!pode.inspecionar() && !$('#area-inspecao').hidden) irPara('painel');
+  if (!pode.administrar() && !$('#area-acessos').hidden) irPara('painel');
+}
+
+/* ---------- navegação ---------- */
+function irPara(area) {
+  ['painel', 'inspecao', 'acessos'].forEach(a => { $('#nav-' + a).classList.toggle('ativo', a === area); $('#area-' + a).hidden = a !== area; });
+  if (area === 'inspecao') renderFinder();
+  if (area === 'acessos') renderAcessos();
+  if (area === 'painel') renderTudo();
+}
+$('#nav-painel').onclick = () => irPara('painel');
+$('#nav-inspecao').onclick = () => irPara('inspecao');
+$('#nav-acessos').onclick = () => irPara('acessos');
+function abaPainel(t) {
+  document.querySelectorAll('#subtabs-painel button').forEach(b => b.classList.toggle('ativo', b.dataset.tab === t));
+  ['geral', 'ext', 'hid'].forEach(x => $('#tab-' + x).hidden = x !== t);
+}
+document.querySelectorAll('#subtabs-painel button').forEach(b => b.onclick = () => abaPainel(b.dataset.tab));
+
+/* ---------- visão geral ---------- */
+const STATUS = ['Vencido', 'Atenção', 'Regular', 'Sem teste'];
+function kpis(el, lista, alvo, rotulo) {
+  const tot = lista.length, c = s => lista.filter(i => i._status === s).length;
+  const pct = n => tot ? (n / tot * 100).toFixed(1).replace('.', ',') + '%' : '0%';
+  const cards = [{ s: '', l: 'Total', v: tot, sub: rotulo }].concat(STATUS.map(s => ({ s, l: s === 'Atenção' ? 'Em atenção' : s === 'Regular' ? 'Regulares' : s === 'Vencido' ? 'Vencidos' : 'Sem teste', v: c(s), sub: pct(c(s)) + ' do total' })));
+  el.innerHTML = cards.map(k => `<button type="button" class="kpi" data-s="${k.s}"><span class="k-label">${k.l}</span><span class="k-val">${k.v.toLocaleString('pt-BR')}</span><span class="k-sub">${k.sub}</span></button>`).join('');
+  el.querySelectorAll('.kpi').forEach(b => b.onclick = () => {
+    const p = alvo; ['busca', 'div'].forEach(x => $(`#${p}-${x}`).value = ''); if (p === 'ext') $('#ext-tipo').value = '';
+    $(`#${p}-status`).value = b.dataset.s; pag[p] = 0; abaPainel(p); p === 'ext' ? renderExtTabela() : renderHidTabela();
+  });
+}
+function barras(el, lista, cor) {
+  const cont = {}; lista.forEach(i => cont[i.geral || '(sem divisão)'] = (cont[i.geral || '(sem divisão)'] || 0) + 1);
+  const arr = Object.entries(cont).sort((a, b) => b[1] - a[1]), max = Math.max(...arr.map(a => a[1]), 1);
+  el.innerHTML = arr.map(([k, v]) => `<div class="bar-row"><span class="lbl" title="${esc(k)}">${esc(k)}</span><div class="bar-track"><div class="bar-fill" style="width:${(v / max * 100).toFixed(1)}%;background:${cor}"></div></div><span class="v">${v}</span></div>`).join('');
+}
+function renderGeral() {
+  kpis($('#kpis-ext'), EXT, 'ext', 'extintores'); kpis($('#kpis-hid'), HID, 'hid', 'pontos de hidrante');
+  barras($('#chart-ext'), EXT, 'var(--bar-1)'); barras($('#chart-hid'), HID, 'var(--bar-2)');
+  $('#ch-ext-tot').textContent = EXT.length.toLocaleString('pt-BR') + ' itens'; $('#ch-hid-tot').textContent = HID.length + ' pontos';
+}
+
+/* ---------- tabelas ---------- */
+const pag = { ext: 0, hid: 0 }, POR = 50;
+function pager(el, p, total, render) {
+  const pags = Math.max(1, Math.ceil(total / POR)); if (pag[p] >= pags) pag[p] = pags - 1;
+  const ini = total ? pag[p] * POR + 1 : 0, fim = Math.min(total, (pag[p] + 1) * POR);
+  el.innerHTML = `<span class="muted num">${ini}–${fim} de ${total.toLocaleString('pt-BR')}</span><div class="btns"><button class="btn small" type="button" data-a="-1" ${pag[p] === 0 ? 'disabled' : ''}>Anterior</button><span class="num" style="align-self:center">Página ${pag[p] + 1} de ${pags}</span><button class="btn small" type="button" data-a="1" ${pag[p] >= pags - 1 ? 'disabled' : ''}>Próxima</button></div>`;
+  el.querySelectorAll('button').forEach(b => b.onclick = () => { pag[p] += +b.dataset.a; render(); });
+}
+function filtrarExt() {
+  const q = norm($('#ext-busca').value), dv = $('#ext-div').value, tp = $('#ext-tipo').value, st = $('#ext-status').value;
+  return EXT.filter(i => (!dv || i.geral === dv) && (!tp || i.tipo === tp) && (!st || i._status === st) &&
+    (!q || norm([i.n, i.tag, i.localizacao, i.local, i.area, i.tipo, i.fab, i.cod].join(' ')).includes(q)));
+}
+function tipEx(i) { const p = []; if (i.recarga) p.push('Próxima recarga: ' + fmt(isoDe(addAnos(i.recarga, 1)))); if (i.teste) p.push('Próximo teste: ' + fmt(isoDe(addAnos(i.teste, 5)))); return p.join(' · '); }
+function renderExtTabela() {
+  const l = filtrarExt(), pg = l.slice(pag.ext * POR, pag.ext * POR + POR);
+  $('#ext-tbody').innerHTML = pg.length ? pg.map(i => `<tr><td class="num">${esc(i.n)}</td><td>${esc(i.geral)}</td><td>${esc(i.area)}</td><td>${esc(i.local)}</td><td>${esc(i.localizacao)}</td><td class="nowrap num">${esc(i.tag)}</td><td class="nowrap">${esc(i.tipo)}</td><td class="num">${esc(i.fab)}</td><td class="num nowrap">${fmt(i.recarga)}</td><td class="num nowrap">${fmt(i.teste)}</td><td title="${esc(tipEx(i))}">${badge(i._status)}</td></tr>`).join('')
+    : `<tr><td colspan="11"><div class="empty-state"><strong>Nenhum extintor encontrado</strong>Limpe a busca ou os filtros para ver mais itens.</div></td></tr>`;
+  pager($('#ext-pager'), 'ext', l.length, renderExtTabela);
+}
+function filtrarHid() {
+  const q = norm($('#hid-busca').value), dv = $('#hid-div').value, st = $('#hid-status').value;
+  return HID.filter(i => (!dv || i.geral === dv) && (!st || i._status === st) && (!q || norm([i.area, i.local, 'tag ' + i.tag, i.geral].join(' ')).includes(q)));
+}
+function renderHidTabela() {
+  const l = filtrarHid(), pg = l.slice(pag.hid * POR, pag.hid * POR + POR);
+  $('#hid-tbody').innerHTML = pg.length ? pg.map(i => `<tr><td>${esc(i.geral)}</td><td>${esc(i.area)}</td><td>${esc(i.local)}</td><td class="num">${esc(i.tag)}</td><td class="num">${esc(i.abrigos)}</td><td class="num">${esc(i.qtdMang)}</td><td class="num nowrap">${fmt(i.teste1)}</td><td>${i.m1 ? badge(i.m1) : '—'}</td><td class="num nowrap">${+i.qtdMang >= 2 ? fmt(i.teste2) : '—'}</td><td>${+i.qtdMang >= 2 && i.m2 ? badge(i.m2) : '—'}</td><td>${badge(i._status)}</td></tr>`).join('')
+    : `<tr><td colspan="11"><div class="empty-state"><strong>Nenhum hidrante encontrado</strong>Limpe a busca ou os filtros para ver mais pontos.</div></td></tr>`;
+  pager($('#hid-pager'), 'hid', l.length, renderHidTabela);
+}
+['ext-busca', 'ext-div', 'ext-tipo', 'ext-status'].forEach(id => $('#' + id).addEventListener('input', () => { pag.ext = 0; renderExtTabela(); }));
+['hid-busca', 'hid-div', 'hid-status'].forEach(id => $('#' + id).addEventListener('input', () => { pag.hid = 0; renderHidTabela(); }));
+$('#ext-csv').onclick = () => {
+  const h = ['Nº', 'Divisão', 'Área', 'Local', 'Localização', 'Locação', 'Tipo / Capacidade', 'Nº Fabricação', 'Última recarga', 'Último teste', 'Status'];
+  copiar([h, ...filtrarExt().map(i => [i.n, i.geral, i.area, i.local, i.localizacao, i.tag, i.tipo, i.fab, fmt(i.recarga), fmt(i.teste), i._status])].map(r => r.map(csvCell).join(';')).join('\n'));
+};
+$('#hid-csv').onclick = () => {
+  const h = ['Divisão', 'Área', 'Local', 'TAG', 'Abrigos', 'Mangueiras', 'Teste mangueira 1', 'Mangueira 1', 'Teste mangueira 2', 'Mangueira 2', 'Status do ponto'];
+  copiar([h, ...filtrarHid().map(i => [i.geral, i.area, i.local, i.tag, i.abrigos, i.qtdMang, fmt(i.teste1), i.m1, fmt(i.teste2), i.m2, i._status])].map(r => r.map(csvCell).join(';')).join('\n'));
+};
+function renderFiltros() {
+  opts($('#ext-div'), distintos(EXT, i => i.geral), 'Todas'); opts($('#ext-tipo'), distintos(EXT, i => i.tipo), 'Todos'); opts($('#ext-status'), STATUS, 'Todos');
+  opts($('#hid-div'), distintos(HID, i => i.geral), 'Todas'); opts($('#hid-status'), STATUS, 'Todos');
+}
+function renderTudo() { renderFiltros(); renderGeral(); renderExtTabela(); renderHidTabela(); }
+
+/* ---------- nova inspeção ---------- */
+const ITENS_EXT = ['Usado/Não comunicado', 'Não encontrado', 'Local não acessado', 'Obstrução', 'Suporte', 'Etiqueta substituída', 'Sinalização vertical', 'Sinalização horizontal', 'Selo do INMETRO', 'Rótulo', 'Lacre', 'Mangote', 'Pressurização'];
+const ITENS_CO2 = ['Difusor', 'Punho'];
+const G_HID = { 'Hidrante': ['Sinalização', 'Volante', 'Válvula', 'Tampão', 'Corrente', 'Adaptador', 'Vazamento'], 'Abrigo': ['Etiqueta', 'Acesso', 'Porta', 'Acrílico', 'Suporte interno', 'Trava', 'Limpeza', 'Pintura', 'Caixa'] };
+const ITENS_MANG = ['Armazenamento correto', 'Integridade', 'Aduchamento'];
+const CNC = ['C', 'NC', 'NA', 'NV'];
+let modoInsp = 'ext', selecionado = null, resp = {}, histAtual = [], pararHist = () => {};
+
+document.querySelectorAll('#subtabs-insp button').forEach(b => b.onclick = () => {
+  modoInsp = b.dataset.insp; selecionar(null);
+  document.querySelectorAll('#subtabs-insp button').forEach(x => x.classList.toggle('ativo', x === b));
+  $('#f-grupo').value = ''; $('#f-locacao').value = ''; $('#f-busca').value = ''; renderFinder();
+});
+const listaAtual = () => modoInsp === 'ext' ? EXT : HID;
+const locacaoDe = it => modoInsp === 'ext' ? it.local : it.area;
+const chaveItem = it => modoInsp === 'ext' ? String(it.n) : it._key;
+function renderFinder() {
+  const L = listaAtual();
+  opts($('#f-grupo'), distintos(L, i => i._grupo), 'Todos os grupos');
+  $('#f-grupo').querySelectorAll('option').forEach(o => { if (o.value) o.textContent = 'Grupo ' + o.value; });
+  popularLocacoes(); renderResultados(); renderForm();
+}
+function popularLocacoes() {
+  const g = $('#f-grupo').value;
+  opts($('#f-locacao'), distintos(listaAtual().filter(i => !g || i._grupo === g), locacaoDe), 'Todas as locações');
+}
+$('#f-grupo').addEventListener('input', () => { popularLocacoes(); renderResultados(); });
+$('#f-locacao').addEventListener('input', renderResultados);
+$('#f-busca').addEventListener('input', renderResultados);
+function selecionar(it) {
+  pararHist(); selecionado = it; resp = {}; histAtual = [];
+  if (it) pararHist = S.ouvirInspecoes(modoInsp, chaveItem(it), regs => { histAtual = regs; const h = $('#hist-box'); if (h) renderHist(h); }) || (() => {});
+  else pararHist = () => {};
+}
+function renderResultados() {
+  const el = $('#f-results'), g = $('#f-grupo').value, loc = $('#f-locacao').value, q = norm($('#f-busca').value);
+  const grade = !!(g || loc);
+  if (!grade && q.length < 2) { el.className = 'results'; el.innerHTML = `<div class="nota">Escolha um grupo e uma locação, ou digite ao menos 2 caracteres para buscar ${modoInsp === 'ext' ? 'por nº, locação, tipo, local ou área' : 'por área, local ou TAG'}.</div>`; return; }
+  let l = listaAtual().filter(i => (!g || i._grupo === g) && (!loc || locacaoDe(i) === loc));
+  if (q) l = l.filter(i => norm(modoInsp === 'ext' ? [i.n, i.tag, i.tipo, i.local, i.area, i.localizacao].join(' ') : [i.area, i.local, 'tag ' + i.tag, i.geral].join(' ')).includes(q));
+  if (grade) l = l.slice().sort((a, b) => String(a.tag).localeCompare(String(b.tag), 'pt-BR', { numeric: true }));
+  const lim = grade ? 300 : 20, mostra = l.slice(0, lim);
+  el.className = 'results' + (grade ? ' grid' : '');
+  if (!l.length) { el.innerHTML = `<div class="nota">Nenhum ${modoInsp === 'ext' ? 'extintor' : 'hidrante'} encontrado com esses filtros.</div>`; return; }
+  const selK = selecionado ? chaveItem(selecionado) : null;
+  el.innerHTML = mostra.map(i => {
+    const t = modoInsp === 'ext' ? (grade ? esc(i.tag) : `${esc(i.tag)} · Nº ${esc(i.n)}`) : `TAG ${esc(i.tag)}`;
+    const s = modoInsp === 'ext' ? (grade ? esc(i.tipo) : `${esc(i.tipo)} · ${esc(i.local)}`) : (grade ? esc(i.local) : `${esc(i.area)} · ${esc(i.local)}`);
+    return `<button type="button" class="item${chaveItem(i) === selK ? ' sel' : ''}" data-k="${esc(chaveItem(i))}" title="${esc(modoInsp === 'ext' ? i.localizacao : i.local)}"><span class="t num">${t}</span><span class="s">${s}</span></button>`;
+  }).join('') + (l.length > lim ? `<div class="nota">Mostrando ${lim} de ${l.length}. Refine a busca para ver os demais.</div>` : '');
+  el.querySelectorAll('.item').forEach(b => b.onclick = () => {
+    selecionar(listaAtual().find(x => chaveItem(x) === b.dataset.k));
+    renderResultados(); renderForm();
+    if (window.innerWidth < 900) $('#insp-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+function seg(nome, valores) {
+  return `<div class="seg" role="group" aria-label="${esc(nome)}">${valores.map(v => `<button type="button" data-k="${esc(nome)}" data-v="${esc(v)}" class="${resp[nome] === v ? 'on' : ''}" aria-pressed="${resp[nome] === v}">${esc(v)}</button>`).join('')}</div>`;
+}
+function checklist(prefixo, itens, valores = CNC) {
+  return `<div class="checklist">${itens.map(t => `<div class="ck"><span>${esc(t)}</span>${seg(prefixo + t, valores)}</div>`).join('')}</div>`;
+}
+function ligarSeg(root) {
+  root.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+    const k = b.dataset.k, v = b.dataset.v; resp[k] = resp[k] === v ? undefined : v;
+    b.parentElement.querySelectorAll('button').forEach(x => { const on = resp[k] === x.dataset.v; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+  });
+}
+function renderForm() {
+  const el = $('#insp-form');
+  if (!selecionado) {
+    el.innerHTML = `<div class="empty-state"><strong>Selecione um ${modoInsp === 'ext' ? 'extintor' : 'hidrante'}</strong>Escolha o grupo e a locação ao lado e toque no ${modoInsp === 'ext' ? 'número do extintor' : 'TAG do hidrante'} para abrir o checklist.</div>`;
+    return;
+  }
+  modoInsp === 'ext' ? formExt(el, selecionado) : formHid(el, selecionado);
+  ligarSeg(el); renderHist($('#hist-box'));
+}
+const legenda = `<div class="legend">C = Conforme · NC = Não conforme · NA = Não se aplica · NV = Não visível · toque de novo para desmarcar</div>`;
+const blocoFinal = (pref) => `
+  <div class="check-group"><h3>Substituição</h3><div class="ck" style="max-width:420px"><span>O item foi substituído nesta inspeção?</span>${seg('substituido', ['Sim', 'Não'])}</div></div>
+  <div class="field"><label for="${pref}-nc">Não conformidades / ação tomada</label><textarea id="${pref}-nc" placeholder="Descreva as não conformidades encontradas e a ação tomada"></textarea></div>`;
+async function renderHist(el) {
+  if (!el) return;
+  const lista = histAtual;
+  if (!lista.length) { el.innerHTML = `<p class="muted" style="margin:0">Nenhuma inspeção registrada para este item.</p>`; return; }
+  const ids = [...new Set(lista.map(r => r.por).filter(Boolean))];
+  const ps = (S.user && ids.length) ? await S.user.profiles(ids) : {};
+  el.innerHTML = `<div class="hist">${lista.slice().reverse().map(r => {
+    const nc = Object.values(r.respostas || {}).filter(v => v === 'NC').length;
+    return `<div class="hist-item"><div class="top"><strong class="num">${quando(r.data)}</strong><span class="muted" data-quem="${esc(r.por || '')}"></span></div><div>${nc ? `<span class="badge b-Vencido">✕ ${nc} item(ns) não conforme(s)</span>` : `<span class="badge b-Regular">✓ Sem não conformidades</span>`}${r.respostas?.substituido === 'Sim' ? ' <span class="badge b-Atenção">Substituído</span>' : ''}</div>${r.nc ? `<div class="hist-nc"></div>` : ''}</div>`;
+  }).join('')}</div>`;
+  const rev = lista.slice().reverse();
+  el.querySelectorAll('.hist-item').forEach((d, i) => {
+    const r = rev[i];
+    d.querySelector('[data-quem]').textContent = r.por ? (ps[r.por]?.name || (r.por === EU.id ? EU.nome : 'Inspetor')) : (r.inspetor || 'Você');
+    const n = d.querySelector('.hist-nc'); if (n) n.textContent = r.nc;
+  });
+}
+async function salvarInspecao(btn, aviso, montarReg, posSalvar) {
+  const r = Object.fromEntries(Object.entries(resp).filter(([, v]) => v));
+  if (!Object.keys(r).length && !montarReg.temTexto()) { aviso.textContent = 'Marque ao menos um item do checklist antes de salvar.'; return; }
+  btn.disabled = true; aviso.textContent = 'Salvando…';
+  const reg = { id: Date.now(), data: new Date().toISOString(), por: EU.id, respostas: r, ...montarReg.extra() };
+  if (S.modo === 'local') reg.inspetor = EU.nome;
+  try {
+    await S.addInspecao(modoInsp, chaveItem(selecionado), reg);
+    await posSalvar(reg, r);
+    resp = {}; toast('Inspeção salva.'); renderForm(); renderResultados();
+  } catch (e) {
+    btn.disabled = false;
+    if (e && e.code === 'invalid_argument') { EU.podeGravar = false; aplicarPapel(); aviso.textContent = 'Não foi possível salvar: seu acesso nesta página é só de visualização.'; }
+    else aviso.textContent = 'Não foi possível salvar agora. Verifique a conexão e tente de novo.';
+  }
+}
+function formExt(el, it) {
+  const co2 = /^co2/i.test(it.tipo || '');
+  el.innerHTML = `<div class="item-card">
+    <div class="item-head"><div><div class="muted">Extintor · Nº ${esc(it.n)}${it._grupo ? ' · Grupo ' + esc(it._grupo) : ''}</div><h2 class="num">${esc(it.tag)} · ${esc(it.tipo)}</h2></div><span title="${esc(tipEx(it))}">${badge(it._status)}</span></div>
+    <dl class="facts" style="margin:0"><div><dt>Localização</dt><dd>${esc(it.localizacao)}</dd></div><div><dt>Local</dt><dd>${esc(it.local)}</dd></div><div><dt>Área</dt><dd>${esc(it.area)}</dd></div><div><dt>Nº Fabricação</dt><dd class="num">${esc(it.fab)}</dd></div><div><dt>Última recarga</dt><dd class="num">${fmt(it.recarga)}</dd></div><div><dt>Último teste hidrostático</dt><dd class="num">${fmt(it.teste)}</dd></div></dl>
+    <hr class="divider">
+    <div class="check-group"><h3>Itens gerais <small>13 itens</small></h3>${legenda}${checklist('g:', ITENS_EXT)}</div>
+    ${co2 ? `<div class="check-group"><h3>Itens específicos <small>extintores de CO2</small></h3>${checklist('co2:', ITENS_CO2)}
+      <div class="form-row"><div class="field"><label for="x-pv">Peso vazio (kg)</label><input id="x-pv" type="number" step="0.01" inputmode="decimal"></div><div class="field"><label for="x-pc">Peso cheio (kg)</label><input id="x-pc" type="number" step="0.01" inputmode="decimal"></div></div>
+      <div class="ck" style="max-width:420px"><span>Pesagem</span>${seg('co2:Pesagem', ['C', 'NC', 'NA'])}</div></div>` : ''}
+    ${blocoFinal('x')}
+    <div class="check-group"><h3>Atualizar inventário <small>opcional</small></h3><div class="form-row"><div class="field"><label for="x-rec">Nova data de recarga</label><input id="x-rec" type="date"></div><div class="field"><label for="x-tst">Nova data de teste hidrostático</label><input id="x-tst" type="date"></div></div></div>
+    <div class="form-actions"><span class="muted" id="x-aviso" role="status"></span><button class="btn primary" type="button" id="x-salvar">Salvar inspeção</button></div>
+    <hr class="divider"><div class="check-group"><h3>Histórico deste extintor</h3><div id="hist-box"></div></div></div>`;
+  $('#x-salvar').onclick = () => salvarInspecao($('#x-salvar'), $('#x-aviso'), {
+    temTexto: () => !!$('#x-nc').value.trim(),
+    extra: () => ({ nc: $('#x-nc').value.trim(), novaRecarga: $('#x-rec').value || null, novoTeste: $('#x-tst').value || null, ...(co2 ? { pesoVazio: $('#x-pv').value || null, pesoCheio: $('#x-pc').value || null } : {}) })
+  }, async reg => {
+    if (reg.novaRecarga || reg.novoTeste) {
+      const a = {}; if (reg.novaRecarga) a.recarga = reg.novaRecarga; if (reg.novoTeste) a.teste = reg.novoTeste;
+      await S.salvarAjuste('ext', String(it.n), a);
+      if (S.modo === 'local') { AJ.ext = lsGet('aj_ext_v2', {}); }
+      montar(); selecionado = EXT.find(x => String(x.n) === String(it.n));
+    }
+  });
+}
+function formHid(el, it) {
+  const dois = +it.qtdMang >= 2;
+  const mang = (n, data, st) => `<div class="check-group"><h3>Mangueira ${n}</h3>${checklist('m' + n + ':', ITENS_MANG)}
+    <div class="form-row"><div class="field"><label for="h-t${n}">Último teste hidrostático (atual: ${fmt(data)})</label><input id="h-t${n}" type="date"></div></div>
+    <div class="ck" style="max-width:560px;flex-wrap:wrap"><span>Status da mangueira <small class="muted">(usado no painel de status · atual: ${esc(st || '—')})</small></span>${seg('status' + n, STATUS)}</div></div>`;
+  el.innerHTML = `<div class="item-card">
+    <div class="item-head"><div><div class="muted">Hidrante${it._grupo ? ' · Grupo ' + esc(it._grupo) : ''} · ${esc(it.geral)}</div><h2>TAG ${esc(it.tag)} · ${esc(it.area)}</h2></div>${badge(it._status)}</div>
+    <dl class="facts" style="margin:0"><div><dt>Local</dt><dd>${esc(it.local)}</dd></div><div><dt>Abrigos</dt><dd class="num">${esc(it.abrigos)}</dd></div><div><dt>Mangueiras</dt><dd class="num">${esc(it.qtdMang)}</dd></div><div><dt>Mangueira 1</dt><dd>${it.m1 ? badge(it.m1) : '—'}</dd></div>${dois ? `<div><dt>Mangueira 2</dt><dd>${it.m2 ? badge(it.m2) : '—'}</dd></div>` : ''}</dl>
+    <hr class="divider">${legenda}
+    <div class="check-group"><h3>Hidrante <small>7 itens</small></h3>${checklist('h:', G_HID['Hidrante'])}</div>
+    <div class="check-group"><h3>Abrigo <small>9 itens</small></h3>${checklist('a:', G_HID['Abrigo'])}</div>
+    <div class="check-group"><h3>Acessórios <small>quantidade</small></h3><div class="form-row"><div class="field"><label for="h-esg">Esguicho (quantidade)</label><input id="h-esg" type="number" min="0" step="1" inputmode="numeric"></div><div class="field"><label for="h-storz">Chave Storz (quantidade)</label><input id="h-storz" type="number" min="0" step="1" inputmode="numeric"></div></div></div>
+    ${+it.qtdMang >= 1 ? mang(1, it.teste1, it.m1) : ''}${dois ? mang(2, it.teste2, it.m2) : ''}
+    ${blocoFinal('h')}
+    <div class="form-actions"><span class="muted" id="h-aviso" role="status"></span><button class="btn primary" type="button" id="h-salvar">Salvar inspeção</button></div>
+    <hr class="divider"><div class="check-group"><h3>Histórico deste hidrante</h3><div id="hist-box"></div></div></div>`;
+  const g = id => $(id) ? $(id).value || null : null;
+  $('#h-salvar').onclick = () => salvarInspecao($('#h-salvar'), $('#h-aviso'), {
+    temTexto: () => !!$('#h-nc').value.trim(),
+    extra: () => ({ tag: it.tag, area: it.area, esguicho: g('#h-esg'), chaveStorz: g('#h-storz'), teste1: g('#h-t1'), teste2: g('#h-t2'), nc: $('#h-nc').value.trim() })
+  }, async (reg, r) => {
+    const a = {}; if (reg.teste1) a.teste1 = reg.teste1; if (reg.teste2) a.teste2 = reg.teste2; if (r.status1) a.m1 = r.status1; if (r.status2) a.m2 = r.status2;
+    if (Object.keys(a).length) {
+      await S.salvarAjuste('hid', it._key, a);
+      if (S.modo === 'local') { AJ.hid = lsGet('aj_hid_v2', {}); }
+      montar(); selecionado = HID.find(x => x._key === it._key);
+    }
+  });
+}
+
+/* ---------- acessos (administrador) ---------- */
+async function renderAcessos() {
+  if (!pode.administrar() || S.modo === 'local') return;
+  const ids = [...new Set([EU.id, ...Object.keys(ACESSOS), ...Object.keys(PERFIS)].filter(Boolean))];
+  const ps = await S.user.profiles(ids);
+  const ordem = { admin: 0, inspetor: 1, visualizador: 2 };
+  ids.sort((a, b) => (ordem[papelDe(a)] - ordem[papelDe(b)]) || (ps[a]?.name || '').localeCompare(ps[b]?.name || '', 'pt-BR'));
+  const cont = { admin: 0, inspetor: 0, visualizador: 0 }; ids.forEach(i => cont[papelDe(i)]++);
+  $('#acessos-resumo').textContent = `${cont.admin} administrador(es) · ${cont.inspetor} inspetor(es) · ${cont.visualizador} visualizador(es)`;
+  const tb = $('#ac-tbody');
+  tb.innerHTML = ids.map(id => `<tr data-id="${esc(id)}"><td><div class="pessoa"><img class="avatar" alt=""><span class="nm"></span></div></td><td class="papel-cell"></td><td class="num nowrap">${quando(ACESSOS[id]?.ultimo)}</td></tr>`).join('');
+  tb.querySelectorAll('tr').forEach(tr => {
+    const id = tr.dataset.id, p = ps[id] || {}, papel = papelDe(id);
+    tr.querySelector('img').src = p.avatarUrl || '';
+    tr.querySelector('.nm').textContent = (p.name || 'Pessoa sem nome visível') + (id === EU.id ? ' (você)' : '');
+    const cell = tr.querySelector('.papel-cell');
+    if (papel === 'admin') { cell.innerHTML = `<span class="papel admin">Administrador</span> <span class="muted" style="font-size:12px">pelo compartilhamento</span>`; return; }
+    const sel = document.createElement('select'); sel.id = 'papel-' + id; sel.setAttribute('aria-label', 'Perfil');
+    sel.style.maxWidth = '180px';
+    sel.innerHTML = `<option value="inspetor">Inspetor</option><option value="visualizador">Visualizador</option>`;
+    sel.value = papel;
+    sel.onchange = async () => {
+      sel.disabled = true;
+      try { await S.setPerfil(id, sel.value); toast('Perfil atualizado.'); }
+      catch (e) { sel.value = papel; toast('Não foi possível mudar o perfil. Só quem é Editor da página pode fazer isso.'); }
+      sel.disabled = false;
+    };
+    cell.appendChild(sel);
+  });
+}
+$('#ac-busca').addEventListener('focus', () => buscarPessoas(''));
+$('#ac-busca').addEventListener('input', e => buscarPessoas(e.target.value));
+async function buscarPessoas(q) {
+  const box = $('#ac-hits');
+  if (!S.user) { box.hidden = true; return; }
+  const hits = (await S.user.search(q)).filter(h => !(h.id in PERFIS) && !(h.id in ACESSOS) && h.id !== EU.id);
+  if (!hits.length) { box.hidden = !q; box.innerHTML = q ? `<div class="nota muted" style="padding:10px">Ninguém encontrado com esse nome.</div>` : ''; return; }
+  box.hidden = false; box.innerHTML = '';
+  hits.forEach(h => {
+    const b = document.createElement('button'); b.type = 'button';
+    b.innerHTML = `<img class="avatar" alt=""><span class="nm" style="flex:1"></span><span class="btn small" style="pointer-events:none">Tornar inspetor</span>`;
+    b.querySelector('img').src = h.avatarUrl; b.querySelector('.nm').textContent = h.name + (h.email ? ' · ' + h.email : '');
+    b.onclick = async () => {
+      try { await S.setPerfil(h.id, 'inspetor'); toast(h.name + ' agora é Inspetor.'); $('#ac-busca').value = ''; box.hidden = true; }
+      catch (e) { toast('Não foi possível definir o perfil. Só quem é Editor da página pode fazer isso.'); }
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ---------- importação de planilha (administrador) ---------- */
+$('#btn-importar').onclick = () => $('#file-import').click();
+function carregarSheetJS() {
+  return new Promise((ok, err) => {
+    if (window.XLSX) return ok();
+    const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = ok; s.onerror = () => err(new Error('Não foi possível carregar o leitor de planilhas. Verifique a conexão com a internet.')); document.head.appendChild(s);
+  });
+}
+const chaveCab = s => semAcento(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+function dataIso(v) {
+  if (v instanceof Date && !isNaN(v)) return isoDe(new Date(v.getTime() + 12 * 3600e3));
+  if (typeof v === 'string') { const m = v.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
+  return null;
+}
+const txt = v => v == null ? '' : String(v).trim();
+function lerAba(ws, achar) {
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  for (let r = 0; r < Math.min(rows.length, 20); r++) {
+    const cab = (rows[r] || []).map(c => chaveCab(c)); const m = achar(cab);
+    if (m) return rows.slice(r + 1).map(row => m(row)).filter(Boolean);
+  }
+  return null;
+}
+function parserExt(cab) {
+  const idx = k => cab.findIndex(c => c.startsWith(k));
+  const nIs = cab.map((c, i) => c === 'n' ? i : -1).filter(i => i >= 0);
+  if (nIs.length < 2 || idx('tipo') < 0) return null;
+  const c = { n: nIs[0], cod: idx('codplanilha'), geral: idx('geral'), area: cab.indexOf('area'), local: cab.indexOf('local'), localizacao: idx('localizacao'), tag: nIs[1], tipo: idx('tipo'), fab: idx('nfabrica'), recarga: idx('ultimarecarga'), teste: idx('ultimoteste') };
+  return row => { if (row[c.n] == null || row[c.n] === '') return null; return [txt(row[c.n]), txt(row[c.cod]), txt(row[c.geral]), txt(row[c.area]), txt(row[c.local]), txt(row[c.localizacao]), txt(row[c.tag]), txt(row[c.tipo]), txt(row[c.fab]), dataIso(row[c.recarga]), dataIso(row[c.teste])]; };
+}
+function parserHid(cab) {
+  if (!cab.includes('tag') || !cab.includes('geral')) return null;
+  const idx = k => cab.findIndex(c => c.startsWith(k));
+  const testes = cab.map((c, i) => c.startsWith('teste') ? i : -1).filter(i => i >= 0);
+  const c = { geral: cab.indexOf('geral'), area: cab.indexOf('area'), local: cab.indexOf('local'), tag: cab.indexOf('tag'), hidrante: cab.indexOf('hidrante'), abrigos: idx('abrigo'), qtd: idx('qnd'), tamanho: idx('tamanho'), t1: testes[0], t2: testes[1], m1: cab.indexOf('mangueira1'), m2: cab.indexOf('mangueira2') };
+  return row => { if ([c.geral, c.area, c.local, c.tag].every(i => row[i] == null || row[i] === '')) return null; return [txt(row[c.geral]), txt(row[c.area]), txt(row[c.local]), txt(row[c.tag]), txt(row[c.hidrante]), txt(row[c.abrigos]), parseInt(row[c.qtd]) || 0, txt(row[c.tamanho]), dataIso(row[c.t1]), dataIso(row[c.t2]), txt(row[c.m1]), txt(row[c.m2])]; };
+}
+$('#file-import').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    await carregarSheetJS();
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array', cellDates: true });
+    let ne = null, nh = null;
+    wb.SheetNames.forEach(nm => {
+      const k = chaveCab(nm); if (k.includes('resumo')) return;
+      if (k.includes('extintor')) ne = lerAba(wb.Sheets[nm], parserExt) || ne;
+      else if (k.includes('hidrante')) nh = lerAba(wb.Sheets[nm], parserHid) || nh;
+    });
+    if (!ne && !nh) throw new Error('Não encontrei as abas "Inventário - Extintor" ou "Inventário - Hidrantes" nesta planilha.');
+    const ext = ne && ne.length ? ne : BASE_EXT.map(o => EXT_F.map(k => o[k]));
+    const hid = nh && nh.length ? nh : BASE_HID.map(o => HID_F.map(k => o[k]));
+    toast('Enviando planilha…');
+    BASE_EM = await S.salvarInventario(ext, hid);
+    BASE_EXT = ext.map(r => toObj(r, EXT_F)); BASE_HID = hid.map(r => toObj(r, HID_F));
+    montar(); renderTudo(); if (!$('#area-inspecao').hidden) renderFinder();
+    toast(`Inventário atualizado para toda a equipe: ${BASE_EXT.length} extintores e ${BASE_HID.length} hidrantes.`);
+  } catch (err) { toast(err.message || 'Não foi possível ler a planilha.'); }
+});
+
+/* ---------- início ---------- */
+async function iniciar() {
+  const user = window.claude?.use ? await window.claude.use('user') : null;
+  const db = window.claude?.use ? await window.claude.use('db') : null;
+  const uid = user ? await user.id() : null;
+  if (db && user && uid) {
+    S.modo = 'nuvem'; S.db = db; S.user = user; S.uid = uid;
+    const me = await user.me();
+    EU = { id: uid, nome: me.name || 'Você', avatar: me.avatarUrl, dono: me.isOwner, editor: me.canEdit, podeGravar: await user.can('data.write'), papel: 'visualizador' };
+    S.registrarAcesso(me.isOwner || me.canEdit);
+  }
+  $('#user-nome').textContent = EU.nome;
+  if (EU.avatar) $('#user-avatar').src = EU.avatar; else $('#user-avatar').hidden = true;
+  $('#banner-local').hidden = S.modo !== 'local';
+
+  try {
+    const inv = await S.lerInventario();
+    if (inv && inv.ext?.length) { BASE_EXT = inv.ext.map(r => toObj(r, EXT_F)); BASE_HID = inv.hid.map(r => toObj(r, HID_F)); BASE_EM = inv.em || ''; }
+  } catch (e) { console.warn(e); }
+  montar();
+  $('#tela-gate').hidden = true; $('#tela-app').hidden = false;
+  aplicarPapel(); irPara('painel'); abaPainel('geral');
+
+  S.ouvirAjustes((t, o) => {
+    AJ[t] = o; montar(); renderTudo();
+    if (!$('#area-inspecao').hidden) { if (selecionado) selecionado = listaAtual().find(x => chaveItem(x) === chaveItem(selecionado)) || null; renderResultados(); }
+  });
+  S.ouvirPerfis(o => { PERFIS = o; aplicarPapel(); if (!$('#area-acessos').hidden) renderAcessos(); });
+  S.ouvirAcessos(o => { ACESSOS = o; aplicarPapel(); if (!$('#area-acessos').hidden) renderAcessos(); });
+}
+iniciar();
+</script>

@@ -1,0 +1,18 @@
+    <!-- PESSOAS E ACESSOS -->
+    <section id="area-acessos" class="kpi-group" style="gap:16px" hidden>
+      <div class="section-title"><h2>Pessoas e acessos</h2>
+        <div class="cr-acoes"><span class="muted" id="acessos-resumo"></span><button class="btn primary" type="button" id="pe-nova">Cadastrar pessoa</button></div></div>
+      <div class="pe-perfis" id="pe-perfis"></div>
+      <div class="toolbar">
+        <div class="field wide"><label for="pe-busca">Buscar</label><input id="pe-busca" type="text" placeholder="Nome, matrícula, função, equipe…"></div>
+        <div class="field"><label for="pe-fpapel">Perfil</label><select id="pe-fpapel"></select></div>
+        <div class="field"><label for="pe-fturno">Turno</label><select id="pe-fturno"></select></div>
+        <div class="field"><label for="pe-fconta">Conta</label><select id="pe-fconta"><option value="">Todas</option><option value="com">Com conta vinculada</option><option value="sem">Sem conta</option><option value="inativo">Inativas</option></select></div>
+      </div>
+      <div class="table-wrap bi-scroll"><table><thead><tr><th>Pessoa</th><th>Matrícula</th><th>Função</th><th>Turno / equipe</th><th>Grupos</th><th>Perfil</th><th>Conta no sistema</th><th></th></tr></thead><tbody id="pe-tbody"></tbody></table></div>
+      <div class="panel bi-card" id="pe-orfas" hidden>
+        <h2 class="bi-h">Contas que já entraram e ainda não têm cadastro</h2>
+        <p class="bi-note">Essas pessoas abriram o sistema mas não estão na lista acima. Cadastre para definir o perfil delas.</p>
+        <div class="cr-lista" id="pe-orfas-lista"></div>
+      </div>
+    </section>

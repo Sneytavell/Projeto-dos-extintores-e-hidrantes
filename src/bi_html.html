@@ -1,0 +1,70 @@
+
+    <!-- INDICADORES (BI) -->
+    <section id="area-bi" class="kpi-group" style="gap:18px" hidden>
+      <nav class="subtabs" id="subtabs-bi">
+        <button type="button" data-bi="validade" class="ativo">Validade</button>
+        <button type="button" data-bi="mensal">Inspeção mensal</button>
+        <button type="button" data-bi="plano">Realizado x planejado</button>
+      </nav>
+
+      <!-- Validade -->
+      <div id="bi-validade" class="kpi-group" style="gap:16px">
+        <p class="bi-take" id="bi-tk-validade"></p>
+        <div class="kpi-group"><h3>Extintores <span class="muted" style="text-transform:none;letter-spacing:0">· recarga (12 meses) ou teste hidrostático (5 anos), o que vencer primeiro</span></h3><div class="kpis bi-kpis3" id="bi-k-ext"></div></div>
+        <div class="kpi-group"><h3>Mangueiras de hidrante <span class="muted" style="text-transform:none;letter-spacing:0">· teste hidrostático (12 meses)</span></h3><div class="kpis bi-kpis3" id="bi-k-mang"></div></div>
+        <div class="charts">
+          <div class="panel bi-card"><h2 class="bi-h">Situação por divisão</h2><p class="bi-note">Extintores e mangueiras somados.</p>
+            <div class="bi-legend"><span><i style="background:var(--crit)"></i>Vencido</span><span><i style="background:var(--warn)"></i>Vence em até 10 dias</span><span><i style="background:var(--good)"></i>Liberado</span></div>
+            <div class="bi-chart" id="bi-ch-divisao"></div></div>
+          <div class="panel bi-card"><h2 class="bi-h">Vencimentos nas próximas 12 semanas</h2><p class="bi-note">Equipamentos hoje liberados que vencem em cada semana.</p>
+            <div class="bi-legend"><span><i style="background:var(--bar-1)"></i>Extintores</span><span><i style="background:var(--bar-2)"></i>Mangueiras</span></div>
+            <div class="bi-chart" id="bi-ch-proximos"></div></div>
+        </div>
+        <div class="panel bi-card">
+          <h2 class="bi-h">Equipamentos que exigem ação</h2><p class="bi-note">Vencidos e com vencimento em até 10 dias.</p>
+          <div class="toolbar">
+            <div class="field wide"><label for="bi-v-busca">Buscar</label><input id="bi-v-busca" type="text" placeholder="Nº, TAG, local, tipo…"></div>
+            <div class="field"><label for="bi-v-equip">Equipamento</label><select id="bi-v-equip"><option value="">Extintores e mangueiras</option><option value="Extintor">Só extintores</option><option value="Mangueira">Só mangueiras</option></select></div>
+            <div class="field"><label for="bi-v-status">Situação</label><select id="bi-v-status"><option value="">Vencidos e até 10 dias</option><option value="Vencido">Só vencidos</option><option value="Vence em até 10 dias">Só até 10 dias</option></select></div>
+          </div>
+          <div class="table-wrap bi-scroll"><table><thead><tr><th>Equipamento</th><th>Tipo</th><th>Local</th><th>Divisão</th><th>Motivo</th><th>Vencimento</th><th>Dias</th><th>Situação</th></tr></thead><tbody id="bi-tb-validade"></tbody></table></div>
+          <div class="muted" id="bi-v-cont" style="font-size:13px"></div>
+        </div>
+      </div>
+
+      <!-- Inspeção mensal -->
+      <div id="bi-mensal" class="kpi-group" style="gap:16px" hidden>
+        <p class="bi-take" id="bi-tk-mensal"></p>
+        <div class="kpis bi-kpis4" id="bi-k-mensal"></div>
+        <div class="panel bi-card"><h2 class="bi-h">Dias para vencer a inspeção mensal</h2>
+          <p class="bi-note">Cada barra é uma locação. Prazo = data da última inspeção + 30 dias (cai na virada do mês). Abaixo de zero, a inspeção já venceu. Locações sem nenhuma inspeção registrada ficam de fora do gráfico.</p>
+          <div class="bi-legend"><span><i style="background:var(--crit)"></i>Vencida</span><span><i style="background:var(--warn)"></i>Até 10 dias</span><span><i style="background:var(--good)"></i>Mais de 10 dias</span></div>
+          <div class="bi-chart" id="bi-ch-contagem"></div></div>
+        <div class="panel bi-card"><h2 class="bi-h">Controle por locação</h2><p class="bi-note">Ordenado pelo prazo mais próximo. "Itens no mês" conta os equipamentos da locação já inspecionados neste mês.</p>
+          <div class="toolbar">
+            <div class="field wide"><label for="bi-m-busca">Buscar</label><input id="bi-m-busca" type="text" placeholder="Locação…"></div>
+            <div class="field"><label for="bi-m-grupo">Grupo</label><select id="bi-m-grupo"></select></div>
+          </div>
+          <div class="table-wrap bi-scroll"><table><thead><tr><th>Locação</th><th>Grupo</th><th>Itens no mês</th><th>Última inspeção</th><th>Prazo (30 dias)</th><th>Dias para vencer</th></tr></thead><tbody id="bi-tb-mensal"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- Realizado x planejado -->
+      <div id="bi-plano" class="kpi-group" style="gap:16px" hidden>
+        <p class="bi-take" id="bi-tk-plano"></p>
+        <div class="kpis bi-kpis4" id="bi-k-plano"></div>
+        <div class="panel bi-card"><h2 class="bi-h">Avanço acumulado no mês</h2><p class="bi-note">Itens inspecionados (acumulado) contra o cronograma. A linha tracejada projeta o ritmo atual até o fim do mês.</p>
+          <div class="bi-legend"><span><i class="ln" style="background:var(--bar-2)"></i>Planejado</span><span><i class="ln" style="background:var(--accent)"></i>Realizado</span><span><i class="dash"></i>Projeção no ritmo atual</span></div>
+          <div class="bi-chart" id="bi-ch-curva"></div></div>
+        <div class="panel bi-card"><h2 class="bi-h">Por grupo de inspeção</h2><p class="bi-note">Barra cinza: planejado até hoje. Barra azul: realizado. À direita: realizado do total do mês.</p>
+          <div class="bi-chart" id="bi-ch-grupos"></div></div>
+        <div class="panel bi-card" id="bi-plano-edit">
+          <div class="section-title"><h2 class="bi-h">Cronograma do mês</h2><button class="btn small" type="button" id="bi-plano-toggle">Editar datas</button></div>
+          <p class="bi-note" id="bi-plano-origem"></p>
+          <div id="bi-plano-tabela" hidden>
+            <div class="table-wrap bi-scroll"><table><thead><tr><th>Locação</th><th>Grupo</th><th>Itens</th><th>Data planejada</th></tr></thead><tbody id="bi-tb-plano"></tbody></table></div>
+            <div class="form-actions"><span class="muted" id="bi-plano-aviso" role="status"></span><button class="btn" type="button" id="bi-plano-padrao">Distribuir automaticamente</button><button class="btn primary" type="button" id="bi-plano-salvar">Salvar cronograma</button></div>
+          </div>
+        </div>
+      </div>
+    </section>

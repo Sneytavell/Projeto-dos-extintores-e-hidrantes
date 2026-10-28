@@ -1,0 +1,35 @@
+
+    <!-- CRONOGRAMA -->
+    <section id="area-cronograma" class="kpi-group" style="gap:16px" hidden>
+      <div class="section-title"><h2 id="cr-titulo">Cronograma</h2>
+        <div class="cr-acoes"><button class="btn" type="button" id="cr-atribuir">Atribuir inspeções</button><button class="btn primary" type="button" id="cr-nova">Nova tarefa</button></div></div>
+      <div class="toolbar">
+        <div class="field"><label for="cr-pessoa">Pessoa</label><select id="cr-pessoa"></select></div>
+        <div class="field"><label for="cr-tipo">Mostrar</label><select id="cr-tipo"><option value="">Inspeções e tarefas</option><option value="insp">Só inspeções</option><option value="tarefa">Só tarefas</option></select></div>
+        <div class="field"><label for="cr-sit">Situação</label><select id="cr-sit"><option value="">Todas</option><option value="aberto">Em aberto</option><option value="atrasada">Atrasadas</option><option value="concluida">Concluídas</option></select></div>
+      </div>
+      <div class="kpis bi-kpis4" id="cr-kpis"></div>
+      <nav class="subtabs" id="subtabs-cr">
+        <button type="button" data-cr="pessoas" class="ativo">Por pessoa</button>
+        <button type="button" data-cr="calendario">Calendário do mês</button>
+      </nav>
+      <div id="cr-pessoas" class="cr-pessoas"></div>
+      <div id="cr-calendario" hidden>
+        <div class="cr-cal-wrap"><div class="cr-cal" id="cr-cal"></div></div>
+        <div class="panel bi-card" id="cr-dia" hidden><div class="section-title"><h2 class="bi-h" id="cr-dia-titulo"></h2><button class="btn small" type="button" id="cr-dia-fechar">Fechar</button></div><div class="cr-lista" id="cr-dia-lista"></div></div>
+      </div>
+
+      <!-- Editor de atribuição de inspeções (administrador) -->
+      <div class="panel bi-card" id="cr-editor" hidden>
+        <div class="section-title"><h2 class="bi-h">Atribuir inspeções do mês</h2><button class="btn small" type="button" id="cr-ed-fechar">Fechar</button></div>
+        <p class="bi-note">Defina a data e o responsável de cada locação. Para passar um grupo inteiro para uma pessoa, use a linha abaixo.</p>
+        <div class="toolbar">
+          <div class="field"><label for="cr-ed-grupo">Grupo</label><select id="cr-ed-grupo"></select></div>
+          <div class="field"><label for="cr-ed-resp">Responsável</label><select id="cr-ed-resp"></select></div>
+          <button class="btn" type="button" id="cr-ed-aplicar">Atribuir grupo</button>
+          <button class="btn" type="button" id="cr-ed-datas">Distribuir datas automaticamente</button>
+        </div>
+        <div class="table-wrap bi-scroll"><table><thead><tr><th>Locação</th><th>Grupo</th><th>Itens</th><th>Data</th><th>Responsável</th></tr></thead><tbody id="cr-ed-tbody"></tbody></table></div>
+        <div class="form-actions"><span class="muted" id="cr-ed-aviso" role="status"></span><button class="btn primary" type="button" id="cr-ed-salvar">Salvar atribuições</button></div>
+      </div>
+    </section>
