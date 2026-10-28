@@ -771,7 +771,7 @@ td.nowrap{white-space:nowrap}
         <div class="field"><label for="pe-fturno">Turno</label><select id="pe-fturno"></select></div>
         <div class="field"><label for="pe-fconta">Conta</label><select id="pe-fconta"><option value="">Todas</option><option value="com">Com conta vinculada</option><option value="sem">Sem conta</option><option value="inativo">Inativas</option></select></div>
       </div>
-      <div class="table-wrap bi-scroll"><table><thead><tr><th>Pessoa</th><th>Matrícula</th><th>Função</th><th>Turno / equipe</th><th>Áreas</th><th>Perfil</th><th>Conta no sistema</th><th></th></tr></thead><tbody id="pe-tbody"></tbody></table></div>
+      <div class="table-wrap bi-scroll"><table><thead><tr><th>Pessoa</th><th>Matrícula</th><th>Função</th><th>Turno / equipe</th><th>Áreas</th><th>Perfil</th><th>Acesso</th><th></th></tr></thead><tbody id="pe-tbody"></tbody></table></div>
       <div class="panel bi-card" id="pe-orfas" hidden>
         <h2 class="bi-h">Contas que já entraram e ainda não têm cadastro</h2>
         <p class="bi-note">Essas pessoas abriram o sistema mas não estão na lista acima. Cadastre para definir o perfil delas.</p>
@@ -1620,7 +1620,7 @@ async function renderAcessos() {
     <td>${esc([p.turno ? 'Turno ' + p.turno : '', p.equipe].filter(Boolean).join(' · ') || '—')}</td>
     <td>${gruposDaPessoa(p.id).todos.map(g => `<span class="tag-tipo insp">${esc(g)}</span>`).join('') || '<span class="muted">todas</span>'}</td>
     <td><span class="papel ${classePerfil(p.papel || 'visualizador')}">${esc(nomePerfil(p.papel || 'visualizador'))}</span></td>
-    <td>${p.uid ? `<span>${esc(PE_NOMES[p.uid]?.name || 'Conta vinculada')}</span><div class="muted" style="font-size:12px">último acesso ${esc(quando(ACESSOS[p.uid]?.ultimo))}</div>` : '<span class="muted">Sem conta (só cadastro)</span>'}</td>
+    <td>${S.firebase || !S.user ? (p.pinHash && p.matricula ? '<span>Matrícula + PIN</span><div class="muted" style="font-size:12px">pode entrar no sistema</div>' : '<span class="muted">Sem PIN</span><div class="muted" style="font-size:12px">defina um PIN em Editar para a pessoa entrar</div>') : p.uid ? `<span>${esc(PE_NOMES[p.uid]?.name || 'Conta vinculada')}</span><div class="muted" style="font-size:12px">último acesso ${esc(quando(ACESSOS[p.uid]?.ultimo))}</div>` : (p.pinHash && p.matricula ? '<span>Matrícula + PIN</span><div class="muted" style="font-size:12px">sem conta Claude vinculada</div>' : '<span class="muted">Sem conta (só cadastro)</span>')}</td>
     <td>${pode.cadastrar() ? `<button class="btn small" type="button" data-editar="${esc(p.id)}">Editar</button>` : ''}</td></tr>`).join('')
     : `<tr><td colspan="8"><div class="bi-empty">${lista.length ? 'Ninguém encontrado com esses filtros.' : 'Nenhuma pessoa cadastrada ainda. Use "Cadastrar pessoa" para começar pela equipe de inspeção.'}</div></td></tr>`;
   tb.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => abrirPessoa(b.dataset.editar));
