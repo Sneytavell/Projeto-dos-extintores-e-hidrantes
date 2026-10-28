@@ -1288,6 +1288,7 @@ function ligarSeg(root) {
   root.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
     const k = b.dataset.k, v = b.dataset.v; resp[k] = resp[k] === v ? undefined : v;
     b.parentElement.querySelectorAll('button').forEach(x => { const on = resp[k] === x.dataset.v; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+    if (k === 'substituido' && root.querySelector('#sub-alt-box')) root.querySelector('#sub-alt-box').hidden = resp.substituido !== 'Sim';
   });
 }
 function renderForm() {
@@ -1301,7 +1302,7 @@ function renderForm() {
 }
 const legenda = `<div class="legend">C = Conforme · NC = Não conforme · NA = Não se aplica · NV = Não visível · toque de novo para desmarcar</div>`;
 const blocoFinal = (pref) => `
-  <div class="check-group"><h3>Substituição</h3><div class="ck" style="max-width:420px"><span>O item foi substituído nesta inspeção?</span>${seg('substituido', ['Sim', 'Não'])}</div></div>
+  <div class="check-group"><h3>Substituição</h3><div class="ck" style="max-width:420px"><span>O item foi substituído nesta inspeção?</span>${seg('substituido', ['Sim', 'Não'])}</div>${pode.inspecionar() ? `<div id="sub-alt-box" ${resp.substituido === 'Sim' ? '' : 'hidden'} style="margin-top:10px"><button class="btn small" type="button" id="sub-alt">Alterar dados do item substituído</button> <span class="muted" style="font-size:13px">nº de fabricação, recarga, teste</span></div>` : ''}</div>
   <div class="field"><label for="${pref}-nc">Não conformidades / ação tomada</label><textarea id="${pref}-nc" placeholder="Descreva as não conformidades encontradas e a ação tomada"></textarea></div>`;
 async function renderHist(el) {
   if (!el) return;
@@ -1341,7 +1342,7 @@ async function salvarInspecao(btn, aviso, montarReg, posSalvar) {
 function formExt(el, it) {
   const co2 = /^co2/i.test(it.tipo || '');
   el.innerHTML = `<div class="item-card">
-    <div class="item-head"><div><div class="muted">Extintor · Nº ${esc(it.n)}${it._grupo ? ' · Grupo ' + esc(it._grupo) : ''}</div><h2 class="num">${esc(it.tag)} · ${esc(it.tipo)}</h2></div><div style="display:flex;gap:8px;align-items:center">${pode.inspecionar() ? '<button class="btn small" type="button" id="x-alt">Alterar dados</button>' : ''}<span title="${esc(tipEx(it))}">${badge(it._status)}</span></div></div>
+    <div class="item-head"><div><div class="muted">Extintor · Nº ${esc(it.n)}${it._grupo ? ' · Grupo ' + esc(it._grupo) : ''}</div><h2 class="num">${esc(it.tag)} · ${esc(it.tipo)}</h2></div><div style="display:flex;gap:8px;align-items:center"><span title="${esc(tipEx(it))}">${badge(it._status)}</span></div></div>
     <dl class="facts" style="margin:0"><div><dt>Localização</dt><dd>${esc(it.localizacao)}</dd></div><div><dt>Local</dt><dd>${esc(it.local)}</dd></div><div><dt>Área</dt><dd>${esc(it.area)}</dd></div><div><dt>Nº Fabricação</dt><dd class="num">${esc(it.fab)}</dd></div><div><dt>Última recarga</dt><dd class="num">${fmtM(it.recarga)}</dd></div><div><dt>Último teste hidrostático</dt><dd class="num">${fmtM(it.teste)}</dd></div></dl>
     <hr class="divider">
     <div class="check-group"><h3>Itens gerais <small>13 itens</small></h3>${legenda}${checklist('g:', ITENS_EXT)}</div>
@@ -1353,7 +1354,7 @@ function formExt(el, it) {
     <div class="form-actions"><span class="muted" id="x-aviso" role="status"></span><button class="btn primary" type="button" id="x-salvar">Salvar inspeção</button></div>
     ${altHtml(AJ.ext[String(it.n)])}
     <hr class="divider"><div class="check-group"><h3>Histórico deste extintor</h3><div id="hist-box"></div></div></div>`;
-  if ($('#x-alt')) $('#x-alt').onclick = () => abrirEdicaoExt(it);
+  if ($('#sub-alt')) $('#sub-alt').onclick = () => abrirEdicaoExt(it);
   $('#x-salvar').onclick = () => salvarInspecao($('#x-salvar'), $('#x-aviso'), {
     temTexto: () => !!$('#x-nc').value.trim(),
     extra: () => ({ nc: $('#x-nc').value.trim(), novaRecarga: $('#x-rec').value || null, novoTeste: $('#x-tst').value || null, ...(co2 ? { pesoVazio: $('#x-pv').value || null, pesoCheio: $('#x-pc').value || null } : {}) })
@@ -1372,7 +1373,7 @@ function formHid(el, it) {
     <div class="form-row"><div class="field"><label for="h-t${n}">Último teste hidrostático (atual: ${fmt(data)})</label><input id="h-t${n}" type="date"></div></div>
     <div class="ck" style="max-width:560px;flex-wrap:wrap"><span>Status da mangueira <small class="muted">(usado no painel de status · atual: ${esc(st || '—')})</small></span>${seg('status' + n, STATUS)}</div></div>`;
   el.innerHTML = `<div class="item-card">
-    <div class="item-head"><div><div class="muted">Hidrante${it._grupo ? ' · Grupo ' + esc(it._grupo) : ''} · ${esc(it.geral)}</div><h2>TAG ${esc(it.tag)} · ${esc(it.area)}</h2></div><div style="display:flex;gap:8px;align-items:center">${pode.inspecionar() ? '<button class="btn small" type="button" id="h-alt">Alterar dados</button>' : ''}${badge(it._status)}</div></div>
+    <div class="item-head"><div><div class="muted">Hidrante${it._grupo ? ' · Grupo ' + esc(it._grupo) : ''} · ${esc(it.geral)}</div><h2>TAG ${esc(it.tag)} · ${esc(it.area)}</h2></div><div style="display:flex;gap:8px;align-items:center">${badge(it._status)}</div></div>
     <dl class="facts" style="margin:0"><div><dt>Local</dt><dd>${esc(it.local)}</dd></div><div><dt>Abrigos</dt><dd class="num">${esc(it.abrigos)}</dd></div><div><dt>Mangueiras</dt><dd class="num">${esc(it.qtdMang)}</dd></div><div><dt>Mangueira 1</dt><dd>${it.m1 ? badge(it.m1) : '—'}${it.fab1 ? '<div class="muted num" style="font-size:12px">Nº ' + esc(it.fab1) + '</div>' : ''}</dd></div>${dois ? `<div><dt>Mangueira 2</dt><dd>${it.m2 ? badge(it.m2) : '—'}${it.fab2 ? '<div class="muted num" style="font-size:12px">Nº ' + esc(it.fab2) + '</div>' : ''}</dd></div>` : ''}</dl>
     <hr class="divider">${legenda}
     <div class="check-group"><h3>Hidrante <small>7 itens</small></h3>${checklist('h:', G_HID['Hidrante'])}</div>
@@ -1383,7 +1384,7 @@ function formHid(el, it) {
     <div class="form-actions"><span class="muted" id="h-aviso" role="status"></span><button class="btn primary" type="button" id="h-salvar">Salvar inspeção</button></div>
     ${altHtml(AJ.hid[it._key])}
     <hr class="divider"><div class="check-group"><h3>Histórico deste hidrante</h3><div id="hist-box"></div></div></div>`;
-  if ($('#h-alt')) $('#h-alt').onclick = () => abrirEdicaoHid(it);
+  if ($('#sub-alt')) $('#sub-alt').onclick = () => abrirEdicaoHid(it);
   const g = id => $(id) ? $(id).value || null : null;
   $('#h-salvar').onclick = () => salvarInspecao($('#h-salvar'), $('#h-aviso'), {
     temTexto: () => !!$('#h-nc').value.trim(),
