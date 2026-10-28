@@ -317,6 +317,7 @@ td.nowrap{white-space:nowrap}
 .bi-tipo b{background:var(--bg-soft,rgba(127,127,127,.15));border-radius:999px;padding:1px 8px;font-size:12px}
 .bi-tipo:hover{border-color:var(--accent)}.bi-tipo.on{background:var(--accent);border-color:var(--accent);color:#fff}.bi-tipo.on b{background:rgba(255,255,255,.25)}
 #tab-ext td:nth-child(2),#tab-ext td:nth-child(3),#tab-ext td:nth-child(4),#tab-hid td:nth-child(1),#tab-hid td:nth-child(2),#tab-hid td:nth-child(3){min-width:150px}
+.f-gal{display:grid;grid-template-columns:1fr;gap:12px}
 .bp-dia{margin-top:10px;font-size:14px}.bp-dia summary{cursor:pointer;color:var(--accent);font-weight:600}
 .tgs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .tg{font-style:normal;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap;line-height:1.5}
@@ -613,7 +614,9 @@ td.nowrap{white-space:nowrap}
       <div class="insp-grid">
         <div class="finder">
           <div class="field"><label for="f-grupo">Grupo (opcional)</label><select id="f-grupo"></select></div>
-          <div class="field"><label for="f-locacao">Locação (opcional)</label><select id="f-locacao"></select></div>
+          <div class="form-row f-gal"><div class="field"><label for="f-geral">Geral</label><select id="f-geral"></select></div>
+          <div class="field"><label for="f-area">Área</label><select id="f-area"></select></div>
+          <div class="field"><label for="f-locacao">Local</label><select id="f-locacao"></select></div></div>
           <div class="field"><label for="f-busca">Buscar</label><input id="f-busca" type="text" placeholder="Digite ao menos 2 caracteres"></div>
           <div class="field"><label for="f-mostrar">Mostrar</label><select id="f-mostrar"><option value="">Todos</option><option value="venc">Vencidos (recarga / teste)</option><option value="pend">Falta inspecionar no mês</option><option value="feito">Já inspecionados no mês</option></select></div>
           <div class="f-legenda"><span><i class="tg tg-v">✕ Vencido</i> recarga ou teste vencido</span><span><i class="tg tg-a">! Atenção</i> vence em até 10 dias</span><span><i class="tg tg-ok">✓ Mês</i> já inspecionado este mês</span><span><i class="tg tg-iv">⏰ Inspeção</i> inspeção mensal vencida</span></div>
@@ -1312,10 +1315,10 @@ let modoInsp = 'ext', selecionado = null, resp = {}, histAtual = [], pararHist =
 document.querySelectorAll('#subtabs-insp button').forEach(b => b.onclick = () => {
   modoInsp = b.dataset.insp; selecionar(null);
   document.querySelectorAll('#subtabs-insp button').forEach(x => x.classList.toggle('ativo', x === b));
-  $('#f-grupo').value = ''; $('#f-locacao').value = ''; $('#f-busca').value = ''; renderFinder();
+  $('#f-grupo').value = ''; $('#f-geral').value = ''; $('#f-area').value = ''; $('#f-locacao').value = ''; $('#f-busca').value = ''; renderFinder();
 });
 const listaAtual = () => modoInsp === 'ext' ? EXT : HID;
-const locacaoDe = it => modoInsp === 'ext' ? it.local : it.area;
+const locacaoDe = it => it.local;
 const chaveItem = it => modoInsp === 'ext' ? String(it.n) : it._key;
 function renderFinder() {
   const L = listaAtual();
@@ -1323,11 +1326,18 @@ function renderFinder() {
   $('#f-grupo').querySelectorAll('option').forEach(o => { if (o.value) o.textContent = 'Grupo ' + o.value; });
   popularLocacoes(); renderResultados(); renderForm();
 }
+// Grupo → Geral → Área → Local: cada filtro limita as opções do seguinte
 function popularLocacoes() {
-  const g = $('#f-grupo').value;
-  opts($('#f-locacao'), distintos(listaAtual().filter(i => !g || i._grupo === g), locacaoDe), 'Todas as locações');
+  const g = $('#f-grupo').value, ord = l => [...new Set(l.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+  const b0 = listaAtual().filter(i => !g || i._grupo === g);
+  opts($('#f-geral'), ord(b0.map(i => i.geral)), 'Todos');
+  const b1 = b0.filter(i => !$('#f-geral').value || i.geral === $('#f-geral').value);
+  opts($('#f-area'), ord(b1.map(i => i.area)), 'Todas');
+  const b2 = b1.filter(i => !$('#f-area').value || i.area === $('#f-area').value);
+  opts($('#f-locacao'), ord(b2.map(i => i.local)), 'Todos');
 }
 $('#f-grupo').addEventListener('input', () => { popularLocacoes(); renderResultados(); });
+['f-geral', 'f-area'].forEach(id => $('#' + id).addEventListener('input', () => { popularLocacoes(); renderResultados(); }));
 $('#f-locacao').addEventListener('input', renderResultados);
 $('#f-busca').addEventListener('input', renderResultados);
 $('#f-mostrar').addEventListener('input', renderResultados);
@@ -1337,12 +1347,12 @@ function selecionar(it) {
   else pararHist = () => {};
 }
 function renderResultados() {
-  const el = $('#f-results'), g = $('#f-grupo').value, loc = $('#f-locacao').value, q = norm($('#f-busca').value);
-  const fm = $('#f-mostrar').value, grade = !!(g || loc || fm);
-  if (!grade && q.length < 2) { el.className = 'results'; el.innerHTML = `<div class="nota">Escolha um grupo e uma locação, ou digite ao menos 2 caracteres para buscar ${modoInsp === 'ext' ? 'por nº, locação, tipo, local ou área' : 'por área, local ou TAG'}.</div>`; return; }
+  const el = $('#f-results'), g = $('#f-grupo').value, loc = $('#f-locacao').value, q = norm($('#f-busca').value), ge = $('#f-geral').value, ar = $('#f-area').value;
+  const fm = $('#f-mostrar').value, grade = !!(g || loc || ge || ar || fm);
+  if (!grade && q.length < 2) { el.className = 'results'; el.innerHTML = `<div class="nota">Escolha o grupo, o geral, a área ou o local, ou digite ao menos 2 caracteres para buscar ${modoInsp === 'ext' ? 'por nº, locação, tipo, local ou área' : 'por área, local ou TAG'}.</div>`; return; }
   const kMes = i => (modoInsp === 'ext' ? 'e_' : 'h_') + (modoInsp === 'ext' ? i.n : i._key);
   const feitoMes = i => !!BI.mes[kMes(i)];
-  let l = listaAtual().filter(i => (!g || i._grupo === g) && (!loc || locacaoDe(i) === loc) && (!fm || (fm === 'venc' ? i._status === 'Vencido' : fm === 'pend' ? !feitoMes(i) : feitoMes(i))));
+  let l = listaAtual().filter(i => (!g || i._grupo === g) && (!ge || i.geral === ge) && (!ar || i.area === ar) && (!loc || locacaoDe(i) === loc) && (!fm || (fm === 'venc' ? i._status === 'Vencido' : fm === 'pend' ? !feitoMes(i) : feitoMes(i))));
   if (q) l = l.filter(i => norm(modoInsp === 'ext' ? [i.tag, i.tipo, i.fab, unidadeExt(i), i.local, i.area, i.localizacao].join(' ') : [i.area, i.local, 'tag ' + i.tag, i.geral].join(' ')).includes(q));
   if (grade) l = l.slice().sort((a, b) => String(a.tag).localeCompare(String(b.tag), 'pt-BR', { numeric: true }));
   const lim = grade ? 300 : 20, mostra = l.slice(0, lim);
@@ -1381,7 +1391,7 @@ function ligarSeg(root) {
 function renderForm() {
   const el = $('#insp-form');
   if (!selecionado) {
-    el.innerHTML = `<div class="empty-state"><strong>Selecione um ${modoInsp === 'ext' ? 'extintor' : 'hidrante'}</strong>Escolha o grupo e a locação ao lado e toque no ${modoInsp === 'ext' ? 'número do extintor' : 'TAG do hidrante'} para abrir o checklist.</div>`;
+    el.innerHTML = `<div class="empty-state"><strong>Selecione um ${modoInsp === 'ext' ? 'extintor' : 'hidrante'}</strong>Escolha o grupo, a área e o local ao lado e toque no ${modoInsp === 'ext' ? 'número do extintor' : 'TAG do hidrante'} para abrir o checklist.</div>`;
     return;
   }
   modoInsp === 'ext' ? formExt(el, selecionado) : formHid(el, selecionado);
@@ -2658,7 +2668,8 @@ function abrirInspecao(l) {
   const tipo = l.equip === 'Extintores' ? 'ext' : 'hid';
   document.querySelector(`#subtabs-insp button[data-insp="${tipo}"]`).click();
   if (l.grupo !== '—') { $('#f-grupo').value = l.grupo; popularLocacoes(); }
-  $('#f-locacao').value = l.nome; renderResultados();
+  if (tipo === 'hid') { $('#f-area').value = l.nome; popularLocacoes(); } else $('#f-locacao').value = l.nome;
+  renderResultados();
 }
 
 async function renderCronograma() {
