@@ -569,7 +569,7 @@ td.nowrap{white-space:nowrap}
           <div class="field wide"><label for="ext-busca">Buscar</label><input id="ext-busca" type="text" placeholder="Locação, unidade, localização, fabricação…"></div>
           <div class="field"><label for="ext-div">Geral</label><select id="ext-div"></select></div>
           <div class="field"><label for="ext-area">Área</label><select id="ext-area"></select></div>
-          <div class="field"><label for="ext-local">Local</label><select id="ext-local"></select></div>
+          <div class="field"><label for="ext-local">Locação</label><select id="ext-local"></select></div>
           <div class="field"><label for="ext-tipo">Tipo</label><select id="ext-tipo"></select></div>
           <div class="field"><label for="ext-status">Status</label><select id="ext-status"></select></div>
           <button class="btn" type="button" id="ext-csv">Copiar CSV</button>
@@ -616,7 +616,7 @@ td.nowrap{white-space:nowrap}
           <div class="field"><label for="f-grupo">Grupo (opcional)</label><select id="f-grupo"></select></div>
           <div class="form-row f-gal"><div class="field"><label for="f-geral">Geral</label><select id="f-geral"></select></div>
           <div class="field"><label for="f-area">Área</label><select id="f-area"></select></div>
-          <div class="field"><label for="f-locacao">Local</label><select id="f-locacao"></select></div></div>
+          <div class="field"><label for="f-locacao" id="f-locacao-lbl">Locação</label><select id="f-locacao"></select></div></div>
           <div class="field"><label for="f-busca">Buscar</label><input id="f-busca" type="text" placeholder="Digite ao menos 2 caracteres"></div>
           <div class="field"><label for="f-mostrar">Mostrar</label><select id="f-mostrar"><option value="">Todos</option><option value="venc">Vencidos (recarga / teste)</option><option value="pend">Falta inspecionar no mês</option><option value="feito">Já inspecionados no mês</option></select></div>
           <div class="f-legenda"><span><i class="tg tg-v">✕ Vencido</i> recarga ou teste vencido</span><span><i class="tg tg-a">! Atenção</i> vence em até 10 dias</span><span><i class="tg tg-ok">✓ Mês</i> já inspecionado este mês</span><span><i class="tg tg-iv">⏰ Inspeção</i> inspeção mensal vencida</span></div>
@@ -1005,7 +1005,7 @@ function statusHid(it) {
 let TODOS_EXT = [], TODOS_HID = [], ALL_EXT = [], ALL_HID = [], RET_EXT = [], RET_HID = [];
 function montar() {
   const vale = a => a && (!BASE_EM || a.em > BASE_EM);
-  const novosE = Object.values(NOVOS).filter(x => x.tipo === 'ext' && !BASE_EXT.some(b => String(b.tag).trim() === x.tag && norm(b.localizacao) === norm(x.localizacao))).map(x => ({ n: idNovoExt(x.tag), cod: '', geral: x.geral || '', area: x.area || '', local: x.local || '', localizacao: x.localizacao || '', tag: x.tag, tipo: x.tipoCap || '', fab: x.fab || '', recarga: x.recarga || '', teste: x.teste || '', unidade: x.unidade || (/^\d{3}\s*-/.test(x.geral || '') ? x.geral : ''), _novo: x.grupo || '' }));
+  const novosE = Object.values(NOVOS).filter(x => x.tipo === 'ext' && !BASE_EXT.some(b => String(b.tag).trim() === x.tag && norm(b.localizacao) === norm(x.localizacao))).map(x => ({ n: idNovoExt(x.tag), cod: x.cod || x.aba || '', geral: x.geral || '', area: x.area || '', local: x.local || '', localizacao: x.localizacao || '', tag: x.tag, tipo: x.tipoCap || '', fab: x.fab || '', recarga: x.recarga || '', teste: x.teste || '', unidade: x.unidade || (/^\d{3}\s*-/.test(x.geral || '') ? x.geral : ''), _novo: x.grupo || '' }));
   const novosH = Object.values(NOVOS).filter(x => x.tipo === 'hid').map(x => ({ geral: x.geral || '', area: x.area || '', local: x.local || '', tag: x.tag, hidrante: '', abrigos: x.abrigos || '', qtdMang: x.qtdMang ?? '', tamanho: '', teste1: x.teste1 || '', teste2: x.teste2 || '', m1: '', m2: '', _novo: x.grupo || '' })).filter(x => !BASE_HID.some(b => chaveHid(b) === chaveHid(x)));
   EXT = [...BASE_EXT, ...novosE].map(b => { const a = AJ.ext[String(b.n)]; const it = { ...b }; if (vale(a)) { ['recarga', 'teste', 'fab', 'tipo', 'unidade'].forEach(f => { if (a[f]) it[f] = a[f]; }); if (a.retirado) { it._retirado = a.retirado; it._retMotivo = a.retiradoMotivo || ''; } } return it; });
   HID = [...BASE_HID, ...novosH].map((b, i) => { const it = { ...b, _idx: i, _key: chaveHid(b) }; const a = AJ.hid[it._key]; if (vale(a)) { ['teste1', 'teste2', 'm1', 'm2', 'fab1', 'fab2'].forEach(f => { if (a[f]) it[f] = a[f]; }); if (a.retirado) { it._retirado = a.retirado; it._retMotivo = a.retiradoMotivo || ''; } } return it; });
@@ -1241,12 +1241,13 @@ function pager(el, p, total, render) {
 }
 // filtros Geral → Área → Local (cada um limita as opções do seguinte)
 function cascataGAL(t, base) {
+  const terc = t === 'ext' ? (i => i.cod || '') : (i => i.local);
   const sg = $('#' + t + '-div'), sa = $('#' + t + '-area'), sl = $('#' + t + '-local');
   const ord = l => [...new Set(l.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
   opts(sg, ord(base.map(i => i.geral)), 'Todos');
   const b1 = base.filter(i => !sg.value || i.geral === sg.value); opts(sa, ord(b1.map(i => i.area)), 'Todas');
-  const b2 = b1.filter(i => !sa.value || i.area === sa.value); opts(sl, ord(b2.map(i => i.local)), 'Todos');
-  return i => (!sg.value || i.geral === sg.value) && (!sa.value || i.area === sa.value) && (!sl.value || i.local === sl.value);
+  const b2 = b1.filter(i => !sa.value || i.area === sa.value); opts(sl, ord(b2.map(terc)), t === 'ext' ? 'Todas' : 'Todos');
+  return i => (!sg.value || i.geral === sg.value) && (!sa.value || i.area === sa.value) && (!sl.value || terc(i) === sl.value);
 }
 function filtrarExt() {
   const q = norm($('#ext-busca').value), tp = $('#ext-tipo').value, st = $('#ext-status').value;
@@ -1315,10 +1316,12 @@ let modoInsp = 'ext', selecionado = null, resp = {}, histAtual = [], pararHist =
 document.querySelectorAll('#subtabs-insp button').forEach(b => b.onclick = () => {
   modoInsp = b.dataset.insp; selecionar(null);
   document.querySelectorAll('#subtabs-insp button').forEach(x => x.classList.toggle('ativo', x === b));
-  $('#f-grupo').value = ''; $('#f-geral').value = ''; $('#f-area').value = ''; $('#f-locacao').value = ''; $('#f-busca').value = ''; renderFinder();
+  LOCAL_FIXO = null; $('#f-grupo').value = ''; $('#f-geral').value = ''; $('#f-area').value = ''; $('#f-locacao').value = ''; $('#f-busca').value = ''; renderFinder();
 });
 const listaAtual = () => modoInsp === 'ext' ? EXT : HID;
-const locacaoDe = it => it.local;
+// extintor: locação = código da planilha (ex.: 111SB/02); hidrante: local
+const locacaoDe = it => modoInsp === 'ext' ? (it.cod || '') : it.local;
+let LOCAL_FIXO = null; // usado ao abrir a inspeção a partir do cronograma (por local)
 const chaveItem = it => modoInsp === 'ext' ? String(it.n) : it._key;
 function renderFinder() {
   const L = listaAtual();
@@ -1334,11 +1337,12 @@ function popularLocacoes() {
   const b1 = b0.filter(i => !$('#f-geral').value || i.geral === $('#f-geral').value);
   opts($('#f-area'), ord(b1.map(i => i.area)), 'Todas');
   const b2 = b1.filter(i => !$('#f-area').value || i.area === $('#f-area').value);
-  opts($('#f-locacao'), ord(b2.map(i => i.local)), 'Todos');
+  opts($('#f-locacao'), ord(b2.map(locacaoDe)), 'Todas');
+  $('#f-locacao-lbl').textContent = modoInsp === 'ext' ? 'Locação' : 'Local';
 }
-$('#f-grupo').addEventListener('input', () => { popularLocacoes(); renderResultados(); });
-['f-geral', 'f-area'].forEach(id => $('#' + id).addEventListener('input', () => { popularLocacoes(); renderResultados(); }));
-$('#f-locacao').addEventListener('input', renderResultados);
+$('#f-grupo').addEventListener('input', () => { LOCAL_FIXO = null; popularLocacoes(); renderResultados(); });
+['f-geral', 'f-area'].forEach(id => $('#' + id).addEventListener('input', () => { LOCAL_FIXO = null; popularLocacoes(); renderResultados(); }));
+$('#f-locacao').addEventListener('input', () => { LOCAL_FIXO = null; renderResultados(); });
 $('#f-busca').addEventListener('input', renderResultados);
 $('#f-mostrar').addEventListener('input', renderResultados);
 function selecionar(it) {
@@ -1348,11 +1352,11 @@ function selecionar(it) {
 }
 function renderResultados() {
   const el = $('#f-results'), g = $('#f-grupo').value, loc = $('#f-locacao').value, q = norm($('#f-busca').value), ge = $('#f-geral').value, ar = $('#f-area').value;
-  const fm = $('#f-mostrar').value, grade = !!(g || loc || ge || ar || fm);
-  if (!grade && q.length < 2) { el.className = 'results'; el.innerHTML = `<div class="nota">Escolha o grupo, o geral, a área ou o local, ou digite ao menos 2 caracteres para buscar ${modoInsp === 'ext' ? 'por nº, locação, tipo, local ou área' : 'por área, local ou TAG'}.</div>`; return; }
+  const fm = $('#f-mostrar').value, grade = !!(g || loc || ge || ar || fm || LOCAL_FIXO);
+  if (!grade && q.length < 2) { el.className = 'results'; el.innerHTML = `<div class="nota">Escolha o grupo, o geral, a área ou a locação, ou digite ao menos 2 caracteres para buscar ${modoInsp === 'ext' ? 'por nº, locação, tipo, local ou área' : 'por área, local ou TAG'}.</div>`; return; }
   const kMes = i => (modoInsp === 'ext' ? 'e_' : 'h_') + (modoInsp === 'ext' ? i.n : i._key);
   const feitoMes = i => !!BI.mes[kMes(i)];
-  let l = listaAtual().filter(i => (!g || i._grupo === g) && (!ge || i.geral === ge) && (!ar || i.area === ar) && (!loc || locacaoDe(i) === loc) && (!fm || (fm === 'venc' ? i._status === 'Vencido' : fm === 'pend' ? !feitoMes(i) : feitoMes(i))));
+  let l = listaAtual().filter(i => (!g || i._grupo === g) && (!ge || i.geral === ge) && (!ar || i.area === ar) && (!loc || locacaoDe(i) === loc) && (!LOCAL_FIXO || i.local === LOCAL_FIXO) && (!fm || (fm === 'venc' ? i._status === 'Vencido' : fm === 'pend' ? !feitoMes(i) : feitoMes(i))));
   if (q) l = l.filter(i => norm(modoInsp === 'ext' ? [i.tag, i.tipo, i.fab, unidadeExt(i), i.local, i.area, i.localizacao].join(' ') : [i.area, i.local, 'tag ' + i.tag, i.geral].join(' ')).includes(q));
   if (grade) l = l.slice().sort((a, b) => String(a.tag).localeCompare(String(b.tag), 'pt-BR', { numeric: true }));
   const lim = grade ? 300 : 20, mostra = l.slice(0, lim);
@@ -1391,7 +1395,7 @@ function ligarSeg(root) {
 function renderForm() {
   const el = $('#insp-form');
   if (!selecionado) {
-    el.innerHTML = `<div class="empty-state"><strong>Selecione um ${modoInsp === 'ext' ? 'extintor' : 'hidrante'}</strong>Escolha o grupo, a área e o local ao lado e toque no ${modoInsp === 'ext' ? 'número do extintor' : 'TAG do hidrante'} para abrir o checklist.</div>`;
+    el.innerHTML = `<div class="empty-state"><strong>Selecione um ${modoInsp === 'ext' ? 'extintor' : 'hidrante'}</strong>Escolha o grupo, a área e a locação ao lado e toque no ${modoInsp === 'ext' ? 'número do extintor' : 'TAG do hidrante'} para abrir o checklist.</div>`;
     return;
   }
   modoInsp === 'ext' ? formExt(el, selecionado) : formHid(el, selecionado);
@@ -2668,7 +2672,8 @@ function abrirInspecao(l) {
   const tipo = l.equip === 'Extintores' ? 'ext' : 'hid';
   document.querySelector(`#subtabs-insp button[data-insp="${tipo}"]`).click();
   if (l.grupo !== '—') { $('#f-grupo').value = l.grupo; popularLocacoes(); }
-  if (tipo === 'hid') { $('#f-area').value = l.nome; popularLocacoes(); } else $('#f-locacao').value = l.nome;
+  if (tipo === 'hid') { $('#f-area').value = l.nome; popularLocacoes(); }
+  else { const it = EXT.find(i => i.local === l.nome && (l.grupo === '—' || i._grupo === l.grupo)); if (it) { $('#f-geral').value = it.geral; popularLocacoes(); $('#f-area').value = it.area; popularLocacoes(); } LOCAL_FIXO = l.nome; }
   renderResultados();
 }
 

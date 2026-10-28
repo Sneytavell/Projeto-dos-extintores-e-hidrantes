@@ -318,3 +318,4 @@ Nova aba "Cronograma" (todos veem; só admin cria/atribui):
 - (v59) Unidade (ex.: 110-Redução I, como no cabeçalho da planilha) no cartão do extintor em Nova inspeção (no lugar de Área) e na tabela Painel → Extintores (coluna Unidade), também nas buscas. Atualizar inventário pelas planilhas compara e grava a Unidade do cabeçalho; itens novos guardam a Unidade.
 - (v60) Painel → Extintores e Hidrantes: filtros Geral → Área → Local em cascata (como o inventário) e colunas Geral, Área, Local.
 - (v61) Nova inspeção: filtros Grupo → Geral → Área → Local em cascata (Local substitui o antigo Locação), para extintores e hidrantes.
+- (v62) Filtros no padrão do inventário: Geral → Área → Locação (código da planilha, ex.: 111SB/02) na Nova inspeção e no Painel → Extintores; hidrantes usam Local. Atalho do cronograma abre a inspeção filtrada pelo local.
