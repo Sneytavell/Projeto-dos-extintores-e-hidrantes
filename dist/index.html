@@ -318,6 +318,7 @@ td.nowrap{white-space:nowrap}
 .bi-tipo:hover{border-color:var(--accent)}.bi-tipo.on{background:var(--accent);border-color:var(--accent);color:#fff}.bi-tipo.on b{background:rgba(255,255,255,.25)}
 #tab-ext td:nth-child(2),#tab-ext td:nth-child(3),#tab-ext td:nth-child(4),#tab-hid td:nth-child(1),#tab-hid td:nth-child(2),#tab-hid td:nth-child(3){min-width:150px}
 .f-gal{display:grid;grid-template-columns:1fr;gap:12px}
+.cr-just{margin-top:4px;font-size:12.5px;border-left:3px solid var(--warn,#d29922);padding:2px 8px;line-height:1.4}
 .bp-dia{margin-top:10px;font-size:14px}.bp-dia summary{cursor:pointer;color:var(--accent);font-weight:600}
 .tgs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .tg{font-style:normal;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap;line-height:1.5}
@@ -666,7 +667,7 @@ td.nowrap{white-space:nowrap}
           <button class="btn" type="button" id="cr-ed-datas">Distribuir datas automaticamente</button>
         </div>
         <div class="muted" id="cr-ed-dono" style="font-size:13px"></div>
-        <div class="table-wrap bi-scroll"><table><thead><tr><th>Locação</th><th>Grupo</th><th>Itens</th><th>Data</th><th>Responsável</th></tr></thead><tbody id="cr-ed-tbody"></tbody></table></div>
+        <div class="table-wrap bi-scroll"><table><thead><tr><th>Locação</th><th>Grupo</th><th>Itens</th><th>Data</th><th>Responsável</th><th>Situação</th></tr></thead><tbody id="cr-ed-tbody"></tbody></table></div>
         <div class="form-actions"><span class="muted" id="cr-ed-aviso" role="status"></span><button class="btn primary" type="button" id="cr-ed-salvar">Salvar atribuições</button></div>
       </div>
     </section>
@@ -929,6 +930,9 @@ const S = {
   async lerPlano(ym) { if (this.modo === 'local') return lsGet('plano_' + ym, null); try { const d = await this.db.doc('plano/' + ym).get(); return d.exists ? d.data() : null; } catch (e) { return null; } },
   ouvirPlano(ym, cb) { if (this.modo === 'local') return cb(lsGet('plano_' + ym, null)); this.db.doc('plano/' + ym).onSnapshot(s => cb(s.exists ? s.data() : null), e => console.warn(e)); },
   async salvarPlano(ym, obj) { const d = { locacoes: obj.locacoes || {}, responsaveis: obj.responsaveis || {}, em: new Date().toISOString(), por: this.uid }; if (this.modo === 'local') return lsSet('plano_' + ym, d); await this.db.doc('plano/' + ym).set(d); },
+  /* justificativas de atraso do cronograma */
+  ouvirJustificativas(cb) { if (this.modo === 'local') { this._localJust = cb; return cb(lsGet('just_v1', {})); } this.db.collection('justificativas').onSnapshot(s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(o); }, e => console.warn(e)); },
+  async salvarJustificativa(id, d) { if (this.modo === 'local') { const o = lsGet('just_v1', {}); o[id] = d; lsSet('just_v1', o); this._localJust && this._localJust(o); return; } await this.db.doc('justificativas/' + id).set(d); },
   /* tarefas livres do cronograma */
   ouvirTarefas(cb) { if (this.modo === 'local') { this._localTarefas = cb; return cb(Object.values(lsGet('tarefas_v1', {}))); } this.db.collection('tarefas').onSnapshot(s => cb(s.docs.map(d => ({ ...d.data(), id: d.id }))), e => console.warn(e)); },
   async salvarTarefa(t) {
@@ -2653,7 +2657,7 @@ const DOW = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'];
 function equipeIds() {
   if (S.modo === 'local') return ['local'];
   const ids = new Set();
-  if (EU.id && pode.inspecionar()) ids.add(EU.id);
+  if (EU.id && pode.inspecionar()) ids.add(S.firebase ? meuId() : EU.id);
   Object.entries(PESSOAS).forEach(([pid, p]) => { if (p.ativo !== false && temPerm(p.papel || 'visualizador', 'inspecionar')) ids.add(p.uid || 'p:' + pid); });
   Object.keys(PERFIS).forEach(id => { if (PERFIS[id]?.papel === 'inspetor' && !Object.values(PESSOAS).some(p => p.uid === id && p.ativo === false)) ids.add(id); });
   Object.keys(ACESSOS).forEach(id => { if (ACESSOS[id]?.admin) ids.add(id); });
@@ -2666,7 +2670,7 @@ async function carregarNomes(ids) {
   const ps = await S.user.profiles(falta);
   falta.forEach(i => CR.nomes[i] = { name: ps[i]?.name || '', avatar: ps[i]?.avatarUrl || '' });
 }
-const nomeDe = id => !id ? 'Sem responsável' : String(id).startsWith('eq:') ? 'Equipe ' + nomeEquipeId(id) + (id === meuEq() ? ' (sua equipe)' : '') : String(id).startsWith('p:') ? ((PESSOAS[id.slice(2)]?.nome || 'Pessoa do cadastro') + ' (sem conta)') : (pessoaDaConta(id)?.nome || CR.nomes[id]?.name || (id === meuId() ? EU.nome : 'Pessoa sem nome visível')) + (id === meuId() && S.modo !== 'local' ? ' (você)' : '');
+const nomeDe = id => !id ? 'Sem responsável' : String(id).startsWith('eq:') ? 'Equipe ' + nomeEquipeId(id) + (id === meuEq() ? ' (sua equipe)' : '') : String(id).startsWith('p:') ? ((PESSOAS[id.slice(2)]?.nome || 'Pessoa do cadastro') + (S.user && !S.firebase ? ' (sem conta)' : '') + (id === meuId() ? ' (você)' : '')) : (pessoaDaConta(id)?.nome || CR.nomes[id]?.name || (id === meuId() ? EU.nome : 'Pessoa sem nome visível')) + (id === meuId() && S.modo !== 'local' ? ' (você)' : '');
 
 function itensCronograma() {
   const locs = locacoesBI(), plano = planoAtual(locs), resp = BI.plano?.responsaveis || {}, ym = ymAtual(), h = isoDe(hoje());
@@ -2690,12 +2694,42 @@ function filtrarCronograma(itens) {
     (!p || (p === 'eu' ? ehMeu(i.resp) : p === 'sem' ? !i.resp : i.resp === p)) &&
     (!st || (st === 'aberto' ? i.status !== 'concluida' : i.status === st)));
 }
+let JUST = {};
+const MOTIVOS_ATRASO = ['Chuva / condição climática', 'Área interditada ou sem liberação', 'Falta de efetivo', 'Atendimento a emergência / ocorrência', 'Treinamento ou simulado', 'Material ou equipamento indisponível', 'Outro'];
+const idJust = i => i.tipo === 'insp' ? ymAtual() + '_' + i.loc.key : 't_' + i.id;
+const diasAtraso = i => Math.max(0, Math.round((dLocal(isoDe(hoje())) - dLocal(i.data)) / 864e5));
+const podeJustificar = i => pode.programarAlgo() || (ehMeu(i.resp) && pode.inspecionar());
+function justHtml(i) {
+  const j = JUST[idJust(i)]; if (!j) return '';
+  return `<div class="cr-just"><b>Justificativa:</b> ${esc(j.motivo)}${j.obs ? ' — ' + esc(j.obs) : ''}${j.novaData ? ` · <b>nova data ${fmt(j.novaData)}</b>` : ''} <span class="muted">(${esc(j.nome || '')}, ${fmt(String(j.em).slice(0, 10))})</span></div>`;
+}
+function abrirJustificativa(i) {
+  const j = JUST[idJust(i)] || {}, min = isoDe(hoje());
+  const bg = modalBase(`<h2 style="font-size:18px">Justificar atraso</h2>
+    <p class="muted" style="margin:0"><strong>${esc(i.titulo)}</strong> · ${esc(i.sub)}<br>Programado para ${fmt(i.data)} · <strong>${nBR(diasAtraso(i))} dia(s) de atraso</strong>${i.resp ? ' · responsável: ' + esc(nomeDe(i.resp)) : ''}</p>
+    <div class="field"><label for="ju-mot">Motivo</label><select id="ju-mot">${MOTIVOS_ATRASO.map(m => `<option${m === j.motivo ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select></div>
+    <div class="field"><label for="ju-obs">Detalhe <span class="muted">(obrigatório em "Outro")</span></label><textarea id="ju-obs" placeholder="O que aconteceu e o que falta fazer"></textarea></div>
+    <div class="field"><label for="ju-data">Nova data prevista</label><input id="ju-data" type="date" min="${min}" value="${esc(j.novaData || '')}" style="max-width:200px"></div>
+    <div class="form-actions"><span class="muted" id="ju-aviso" role="status"></span><button class="btn" type="button" id="ju-x">Cancelar</button><button class="btn primary" type="button" id="ju-ok">Salvar justificativa</button></div>`);
+  const $m = q => bg.querySelector(q); $m('#ju-obs').value = j.obs || '';
+  $m('#ju-x').onclick = () => bg.remove();
+  $m('#ju-ok').onclick = async () => {
+    const motivo = $m('#ju-mot').value, obs = $m('#ju-obs').value.trim(), nd = $m('#ju-data').value;
+    if (motivo === 'Outro' && !obs) { $m('#ju-aviso').textContent = 'Descreva o motivo.'; return; }
+    if (nd && nd < min) { $m('#ju-aviso').textContent = 'A nova data não pode ser no passado.'; return; }
+    $m('#ju-ok').disabled = true;
+    try { await S.salvarJustificativa(idJust(i), { motivo, obs, novaData: nd || '', dataProgramada: i.data, diasAtraso: diasAtraso(i), titulo: i.titulo, resp: i.resp || '', por: meuId(), nome: EU.nome, em: new Date().toISOString() }); toast('Justificativa registrada.'); bg.remove(); renderCronograma(); }
+    catch (e) { $m('#ju-ok').disabled = false; $m('#ju-aviso').textContent = 'Não foi possível salvar. Verifique sua conexão ou seu acesso.'; }
+  };
+}
 function chipStatus(i) {
+  if (i.status === 'atrasada') { const j = JUST[idJust(i)]; return chip('venc', `✕ Atrasada ${nBR(diasAtraso(i))}d`) + (j ? ' ' + chip('dez', 'Justificada') : ''); }
   return { concluida: chip('lib', '✓ Concluída'), atrasada: chip('venc', '✕ Atrasada'), andamento: chip('and', '● Em andamento'), pendente: chip('sem', 'Pendente') }[i.status];
 }
 function itemHtml(i, mostrarResp) {
   const d = dLocal(i.data), dia = String(d.getDate()).padStart(2, '0'), mes = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
   let ac = chipStatus(i);
+  if (i.status === 'atrasada' && podeJustificar(i)) ac += ` <button class="btn small" type="button" data-acao="justificar" data-id="${esc(i.id)}">${JUST[idJust(i)] ? 'Editar justificativa' : 'Justificar atraso'}</button>`;
   if (i.tipo === 'insp' && i.status !== 'concluida' && pode.inspecionar()) ac += ` <button class="btn small" type="button" data-acao="inspecionar" data-id="${esc(i.id)}">Inspecionar</button>`;
   if (i.tipo === 'tarefa') {
     if (pode.planejar() || (pode.programar() && (i.tarefa.criadoPor === meuId() || respNoMeuEscopo(i.resp)))) ac += ` <button class="btn small" type="button" data-acao="editar" data-id="${esc(i.id)}">Editar</button>`;
@@ -2703,12 +2737,13 @@ function itemHtml(i, mostrarResp) {
   }
   return `<div class="cr-item ${i.status}"><div class="dt">${dia}<small>${esc(mes)}</small></div>
     <div><div class="tt"><span class="tag-tipo ${i.tipo}">${i.tipo === 'insp' ? 'Inspeção' : 'Tarefa'}</span>${esc(i.titulo)}</div>
-    <div class="sb">${esc(i.sub)}${mostrarResp ? ' · ' + esc(nomeDe(i.resp)) : ''}</div></div>
+    <div class="sb">${esc(i.sub)}${mostrarResp ? ' · ' + esc(nomeDe(i.resp)) : ''}</div>${i.status === 'atrasada' || (i.status === 'concluida' && JUST[idJust(i)]) ? justHtml(i) : ''}</div>
     <div class="ac">${ac}</div></div>`;
 }
 function ligarItens(root, itens) {
   const porId = Object.fromEntries(itens.map(i => [i.id, i]));
   root.querySelectorAll('[data-acao=inspecionar]').forEach(b => b.onclick = () => abrirInspecao(porId[b.dataset.id].loc));
+  root.querySelectorAll('[data-acao=justificar]').forEach(b => b.onclick = () => abrirJustificativa(porId[b.dataset.id]));
   root.querySelectorAll('[data-acao=editar]').forEach(b => b.onclick = () => abrirTarefa(porId[b.dataset.id].tarefa));
   root.querySelectorAll('.cr-st').forEach(s => s.onchange = async () => {
     const t = porId[s.dataset.id].tarefa; s.disabled = true;
@@ -2747,7 +2782,7 @@ async function renderCronograma() {
   $('#cr-kpis').innerHTML = kpiStatic([
     { s: 'Azul', l: 'Atribuições no mês', v: nBR(itens.length), sub: `${nBR(itens.filter(i => i.tipo === 'insp').length)} inspeções · ${nBR(itens.filter(i => i.tipo === 'tarefa').length)} tarefas` },
     { s: 'Liberado', l: 'Concluídas', v: nBR(c('concluida')), sub: itens.length ? Math.round(c('concluida') / itens.length * 100) + '% do total' : '—' },
-    { s: 'Vencido', l: 'Atrasadas', v: nBR(c('atrasada')), sub: 'data já passou' },
+    { s: 'Vencido', l: 'Atrasadas', v: nBR(c('atrasada')), sub: c('atrasada') ? `${nBR(itens.filter(i => i.status === 'atrasada' && JUST[idJust(i)]).length)} justificada(s) · ${nBR(itens.filter(i => i.status === 'atrasada' && !JUST[idJust(i)]).length)} sem justificativa` : 'data já passou' },
     { s: 'Dez', l: 'Em aberto', v: nBR(c('pendente') + c('andamento')), sub: `${nBR(c('andamento'))} em andamento` }]);
   if (CR.aba === 'pessoas') renderPorPessoa(itens); else renderCalendario(itens);
   if (CR.editor) renderEditor();
@@ -3383,10 +3418,12 @@ function renderEditor() {
   if (!locs.length) { $('#cr-ed-dono').textContent = 'Sua equipe não está com nenhuma planilha agora. Peça ao supervisor para entregar a planilha à sua equipe.'; $('#cr-ed-tbody').innerHTML = ''; return; }
   $('#cr-ed-dono').textContent = !pode.planejar() && !gf ? 'Você está programando as locações dos grupos da sua equipe: ' + meusGruposProgramar().join(', ') + '.' : !gf ? 'Mostrando todos os grupos. Escolha um grupo para ver só as locações dele.' : dono ? `Grupo ${gf}: está com a equipe ${dono.equipe} (planilha recebida em ${fmt(dono.recebimento)}, prazo ${fmt(dono.prazo)}). Sem responsável definido, as locações ficam com essa equipe.` : `Grupo ${gf}: nenhuma equipe está com esta planilha agora.`;
   const vis = locs.filter(l => !gf || l.grupo === gf);
+  const sit = Object.fromEntries(itensCronograma().filter(i => i.tipo === 'insp').map(i => [i.loc.key, i]));
+  const sitHtml = l => { const i = sit[l.key]; if (!i) return ''; const j = JUST[idJust(i)]; return chipStatus(i) + (i.status === 'atrasada' && j ? `<div class="muted" style="font-size:12px;margin-top:3px">${esc(j.motivo)}${j.novaData ? ' · nova data ' + fmt(j.novaData) : ''}</div>` : i.status === 'atrasada' ? '<div class="muted" style="font-size:12px;margin-top:3px">sem justificativa</div>' : ''); };
   $('#cr-ed-tbody').innerHTML = vis.map(l => `<tr><td>${esc(l.nome)} <span class="muted">· ${esc(l.equip)}</span></td><td>${esc(l.grupo)}</td><td class="num">${l.itens.length}</td>
     <td><input type="date" id="ed-d-${l.key}" data-k="${l.key}" min="${min}" max="${max}" value="${CR.editor.datas[l.key] || ''}" style="max-width:160px"></td>
-    <td><select id="ed-r-${l.key}" data-k="${l.key}" aria-label="Responsável" style="max-width:220px">${opcoesPessoas(CR.editor.resp[l.key] || '')}</select></td></tr>`).join('');
-  if (!vis.length) $('#cr-ed-tbody').innerHTML = '<tr><td colspan="5"><div class="bi-empty">Nenhuma locação neste grupo.</div></td></tr>';
+    <td><select id="ed-r-${l.key}" data-k="${l.key}" aria-label="Responsável" style="max-width:220px">${opcoesPessoas(CR.editor.resp[l.key] || '')}</select></td><td>${sitHtml(l)}</td></tr>`).join('');
+  if (!vis.length) $('#cr-ed-tbody').innerHTML = '<tr><td colspan="6"><div class="bi-empty">Nenhuma locação neste grupo.</div></td></tr>';
   nomearOpcoes($('#cr-ed-tbody'));
   $('#cr-ed-tbody').querySelectorAll('input[type=date]').forEach(i => i.addEventListener('change', () => { if (i.value && i.validity.valid) CR.editor.datas[i.dataset.k] = i.value; }));
   $('#cr-ed-tbody').querySelectorAll('select').forEach(s => s.addEventListener('change', () => { if (s.value) CR.editor.resp[s.dataset.k] = s.value; else delete CR.editor.resp[s.dataset.k]; }));
@@ -3461,6 +3498,7 @@ $('#cr-nova').onclick = () => abrirTarefa(null);
 
 function iniciarCronograma() {
   S.ouvirTarefas(l => { CR.tarefas = l; renderCronograma(); });
+  S.ouvirJustificativas(o => { JUST = o; renderCronograma(); });
 }
 
 
