@@ -105,6 +105,7 @@
 .bi-tipo{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:transparent;color:inherit;border-radius:999px;padding:4px 6px 4px 12px;font:inherit;font-size:13px;cursor:pointer}
 .bi-tipo b{background:var(--bg-soft,rgba(127,127,127,.15));border-radius:999px;padding:1px 8px;font-size:12px}
 .bi-tipo:hover{border-color:var(--accent)}.bi-tipo.on{background:var(--accent);border-color:var(--accent);color:#fff}.bi-tipo.on b{background:rgba(255,255,255,.25)}
+#tab-ext td:nth-child(2),#tab-ext td:nth-child(3),#tab-ext td:nth-child(4),#tab-hid td:nth-child(1),#tab-hid td:nth-child(2),#tab-hid td:nth-child(3){min-width:150px}
 .bp-dia{margin-top:10px;font-size:14px}.bp-dia summary{cursor:pointer;color:var(--accent);font-weight:600}
 .tgs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .tg{font-style:normal;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap;line-height:1.5}
@@ -354,23 +355,27 @@
       <div id="tab-ext" class="kpi-group" style="gap:12px" hidden>
         <div class="toolbar">
           <div class="field wide"><label for="ext-busca">Buscar</label><input id="ext-busca" type="text" placeholder="Locação, unidade, localização, fabricação…"></div>
-          <div class="field"><label for="ext-div">Divisão</label><select id="ext-div"></select></div>
+          <div class="field"><label for="ext-div">Geral</label><select id="ext-div"></select></div>
+          <div class="field"><label for="ext-area">Área</label><select id="ext-area"></select></div>
+          <div class="field"><label for="ext-local">Local</label><select id="ext-local"></select></div>
           <div class="field"><label for="ext-tipo">Tipo</label><select id="ext-tipo"></select></div>
           <div class="field"><label for="ext-status">Status</label><select id="ext-status"></select></div>
           <button class="btn" type="button" id="ext-csv">Copiar CSV</button>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Locação</th><th>Divisão</th><th>Unidade</th><th>Local</th><th>Localização</th><th>Tipo / Capacidade</th><th>Nº Fabricação</th><th>Última recarga</th><th>Último teste</th><th>Inspeção mensal</th><th>Status</th></tr></thead><tbody id="ext-tbody"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Locação</th><th>Geral</th><th>Área</th><th>Local</th><th>Localização</th><th>Tipo / Capacidade</th><th>Nº Fabricação</th><th>Última recarga</th><th>Último teste</th><th>Inspeção mensal</th><th>Status</th></tr></thead><tbody id="ext-tbody"></tbody></table></div>
         <div class="pager" id="ext-pager"></div>
       </div>
 
       <div id="tab-hid" class="kpi-group" style="gap:12px" hidden>
         <div class="toolbar">
           <div class="field wide"><label for="hid-busca">Buscar</label><input id="hid-busca" type="text" placeholder="Área, local, TAG…"></div>
-          <div class="field"><label for="hid-div">Divisão</label><select id="hid-div"></select></div>
+          <div class="field"><label for="hid-div">Geral</label><select id="hid-div"></select></div>
+          <div class="field"><label for="hid-area">Área</label><select id="hid-area"></select></div>
+          <div class="field"><label for="hid-local">Local</label><select id="hid-local"></select></div>
           <div class="field"><label for="hid-status">Status</label><select id="hid-status"></select></div>
           <button class="btn" type="button" id="hid-csv">Copiar CSV</button>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Divisão</th><th>Área</th><th>Local</th><th>TAG</th><th>Abrigos</th><th>Mangueiras</th><th>Teste mang. 1</th><th>Mangueira 1</th><th>Teste mang. 2</th><th>Mangueira 2</th><th>Inspeção mensal</th><th>Status do ponto</th></tr></thead><tbody id="hid-tbody"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Geral</th><th>Área</th><th>Local</th><th>TAG</th><th>Abrigos</th><th>Mangueiras</th><th>Teste mang. 1</th><th>Mangueira 1</th><th>Teste mang. 2</th><th>Mangueira 2</th><th>Inspeção mensal</th><th>Status do ponto</th></tr></thead><tbody id="hid-tbody"></tbody></table></div>
         <div class="pager" id="hid-pager"></div>
       </div>
       <div id="tab-hist" class="kpi-group" style="gap:12px" hidden>
@@ -1020,10 +1025,20 @@ function pager(el, p, total, render) {
   el.innerHTML = `<span class="muted num">${ini}–${fim} de ${total.toLocaleString('pt-BR')}</span><div class="btns"><button class="btn small" type="button" data-a="-1" ${pag[p] === 0 ? 'disabled' : ''}>Anterior</button><span class="num" style="align-self:center">Página ${pag[p] + 1} de ${pags}</span><button class="btn small" type="button" data-a="1" ${pag[p] >= pags - 1 ? 'disabled' : ''}>Próxima</button></div>`;
   el.querySelectorAll('button').forEach(b => b.onclick = () => { pag[p] += +b.dataset.a; render(); });
 }
+// filtros Geral → Área → Local (cada um limita as opções do seguinte)
+function cascataGAL(t, base) {
+  const sg = $('#' + t + '-div'), sa = $('#' + t + '-area'), sl = $('#' + t + '-local');
+  const ord = l => [...new Set(l.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+  opts(sg, ord(base.map(i => i.geral)), 'Todos');
+  const b1 = base.filter(i => !sg.value || i.geral === sg.value); opts(sa, ord(b1.map(i => i.area)), 'Todas');
+  const b2 = b1.filter(i => !sa.value || i.area === sa.value); opts(sl, ord(b2.map(i => i.local)), 'Todos');
+  return i => (!sg.value || i.geral === sg.value) && (!sa.value || i.area === sa.value) && (!sl.value || i.local === sl.value);
+}
 function filtrarExt() {
-  const q = norm($('#ext-busca').value), dv = $('#ext-div').value, tp = $('#ext-tipo').value, st = $('#ext-status').value;
+  const q = norm($('#ext-busca').value), tp = $('#ext-tipo').value, st = $('#ext-status').value;
   const base = st === 'Retirado do controle' ? RET_EXT.filter(i => !areasVisiveis() || areasVisiveis().grupos.includes(i._grupo)) : EXT;
-  return base.filter(i => (!dv || i.geral === dv) && (!tp || i.tipo === tp) && (!st || st === 'Retirado do controle' || i._status === st) &&
+  const gal = cascataGAL('ext', base);
+  return base.filter(i => gal(i) && (!tp || i.tipo === tp) && (!st || st === 'Retirado do controle' || i._status === st) &&
     (!q || norm([i.tag, unidadeExt(i), i.localizacao, i.local, i.area, i.tipo, i.fab, i.cod].join(' ')).includes(q)));
 }
 function tipEx(i) { const p = []; if (i.recarga) p.push('Recarga vence: ' + fmt(isoDe(vencRecarga(i.recarga)))); if (i.teste) p.push('Teste vence: ' + fmt(isoDe(vencTesteExt(i.teste)))); return p.join(' · '); }
@@ -1041,14 +1056,15 @@ function celVenc(iso, due) { if (!iso) return '—'; const st = statusData(due);
 function celMensal(key) { const m = mensalItem(key); if (!m.ultima) return chip('sem', 'sem registro'); return `${fmt(m.ultima)}<div class="venc-sub ${m.st === 'Vencida' ? 'v' : m.st === 'Vence em breve' ? 'a' : ''}">vence ${fmt(m.venc)}</div>`; }
 function renderExtTabela() {
   const podeEd = pode.inspecionar(), l = filtrarExt(), pg = l.slice(pag.ext * POR, pag.ext * POR + POR);
-  $('#ext-tbody').innerHTML = pg.length ? pg.map(i => `<tr><td class="nowrap num"><strong>${esc(i.tag)}</strong>${podeEd ? `<button class="ed-ico" type="button" data-ed-ext="${esc(i.n)}" title="Alterar dados (troca de extintor, nº de fabricação)" aria-label="Alterar dados do extintor ${esc(i.tag)}">✎</button>` : ''}</td><td>${esc(i.geral)}</td><td class="nowrap">${esc(unidadeExt(i))}</td><td>${esc(i.local)}</td><td>${esc(i.localizacao)}</td><td class="nowrap">${esc(i.tipo)}</td><td class="num">${esc(i.fab)}</td><td class="num nowrap">${celVenc(i.recarga, vencRecarga(i.recarga))}</td><td class="num nowrap">${celVenc(i.teste, vencTesteExt(i.teste))}</td><td class="num nowrap">${celMensal('e_' + i.n)}</td><td title="${esc(i._retirado ? 'Retirado em ' + fmt(i._retirado) + (i._retMotivo ? ' · ' + i._retMotivo : '') : tipEx(i))}">${i._retirado ? chip('sem', 'Retirado') : badge(i._status)}</td></tr>`).join('')
+  $('#ext-tbody').innerHTML = pg.length ? pg.map(i => `<tr><td class="nowrap num"><strong>${esc(i.tag)}</strong>${podeEd ? `<button class="ed-ico" type="button" data-ed-ext="${esc(i.n)}" title="Alterar dados (troca de extintor, nº de fabricação)" aria-label="Alterar dados do extintor ${esc(i.tag)}">✎</button>` : ''}</td><td>${esc(i.geral)}</td><td>${esc(i.area)}</td><td>${esc(i.local)}</td><td>${esc(i.localizacao)}</td><td class="nowrap">${esc(i.tipo)}</td><td class="num">${esc(i.fab)}</td><td class="num nowrap">${celVenc(i.recarga, vencRecarga(i.recarga))}</td><td class="num nowrap">${celVenc(i.teste, vencTesteExt(i.teste))}</td><td class="num nowrap">${celMensal('e_' + i.n)}</td><td title="${esc(i._retirado ? 'Retirado em ' + fmt(i._retirado) + (i._retMotivo ? ' · ' + i._retMotivo : '') : tipEx(i))}">${i._retirado ? chip('sem', 'Retirado') : badge(i._status)}</td></tr>`).join('')
     : `<tr><td colspan="11"><div class="empty-state"><strong>Nenhum extintor encontrado</strong>Limpe a busca ou os filtros para ver mais itens.</div></td></tr>`;
   pager($('#ext-pager'), 'ext', l.length, renderExtTabela);
 }
 function filtrarHid() {
-  const q = norm($('#hid-busca').value), dv = $('#hid-div').value, st = $('#hid-status').value;
+  const q = norm($('#hid-busca').value), st = $('#hid-status').value;
   const base = st === 'Retirado do controle' ? RET_HID.filter(i => !areasVisiveis() || areasVisiveis().grupos.includes(i._grupo)) : HID;
-  return base.filter(i => (!dv || i.geral === dv) && (!st || st === 'Retirado do controle' || i._status === st) && (!q || norm([i.area, i.local, 'tag ' + i.tag, i.geral].join(' ')).includes(q)));
+  const gal = cascataGAL('hid', base);
+  return base.filter(i => gal(i) && (!st || st === 'Retirado do controle' || i._status === st) && (!q || norm([i.area, i.local, 'tag ' + i.tag, i.geral].join(' ')).includes(q)));
 }
 function renderHidTabela() {
   const podeEd = pode.inspecionar(), l = filtrarHid(), pg = l.slice(pag.hid * POR, pag.hid * POR + POR);
@@ -1058,8 +1074,8 @@ function renderHidTabela() {
 }
 document.getElementById('ext-tbody').addEventListener('click', e => { const b = e.target.closest('[data-ed-ext]'); if (b) { const it = ALL_EXT.find(x => String(x.n) === b.dataset.edExt); if (it) abrirEdicaoExt(it); } });
 document.getElementById('hid-tbody').addEventListener('click', e => { const b = e.target.closest('[data-ed-hid]'); if (b) { const it = ALL_HID.find(x => x._key === b.dataset.edHid); if (it) abrirEdicaoHid(it); } });
-['ext-busca', 'ext-div', 'ext-tipo', 'ext-status'].forEach(id => $('#' + id).addEventListener('input', () => { pag.ext = 0; renderExtTabela(); }));
-['hid-busca', 'hid-div', 'hid-status'].forEach(id => $('#' + id).addEventListener('input', () => { pag.hid = 0; renderHidTabela(); }));
+['ext-busca', 'ext-div', 'ext-area', 'ext-local', 'ext-tipo', 'ext-status'].forEach(id => $('#' + id).addEventListener('input', () => { pag.ext = 0; renderExtTabela(); }));
+['hid-busca', 'hid-div', 'hid-area', 'hid-local', 'hid-status'].forEach(id => $('#' + id).addEventListener('input', () => { pag.hid = 0; renderHidTabela(); }));
 $('#ext-csv').onclick = () => {
   const h = ['Locação', 'Divisão', 'Área', 'Local', 'Localização', 'Tipo / Capacidade', 'Nº Fabricação', 'Última recarga', 'Vencimento recarga', 'Último teste', 'Vencimento teste', 'Última inspeção mensal', 'Vencimento inspeção mensal', 'Situação inspeção mensal', 'Status'];
   copiar([h, ...filtrarExt().map(i => [i.tag, i.geral, i.area, i.local, i.localizacao, i.tipo, i.fab, fmtM(i.recarga), fmt(i.recarga && isoDe(vencRecarga(i.recarga))), fmtM(i.teste), fmt(i.teste && isoDe(vencTesteExt(i.teste))), ...(m => [fmt(m.ultima), fmt(m.venc), m.st])(mensalItem('e_' + i.n)), i._status])].map(r => r.map(csvCell).join(';')).join('\n'));
@@ -1069,8 +1085,8 @@ $('#hid-csv').onclick = () => {
   copiar([h, ...filtrarHid().map(i => [i.geral, i.area, i.local, i.tag, i.abrigos, i.qtdMang, fmtM(i.teste1), fmt(i.teste1 && isoDe(vencMang(i.teste1))), i.m1, fmtM(i.teste2), fmt(i.teste2 && isoDe(vencMang(i.teste2))), i.m2, ...(m => [fmt(m.ultima), fmt(m.venc), m.st])(mensalItem('h_' + i._key)), i._status])].map(r => r.map(csvCell).join(';')).join('\n'));
 };
 function renderFiltros() {
-  opts($('#ext-div'), distintos(EXT, i => i.geral), 'Todas'); opts($('#ext-tipo'), distintos(EXT, i => i.tipo), 'Todos'); opts($('#ext-status'), [...STATUS, 'Retirado do controle'], 'Todos');
-  opts($('#hid-div'), distintos(HID, i => i.geral), 'Todas'); opts($('#hid-status'), [...STATUS, 'Retirado do controle'], 'Todos');
+  opts($('#ext-tipo'), distintos(EXT, i => i.tipo), 'Todos'); opts($('#ext-status'), [...STATUS, 'Retirado do controle'], 'Todos');
+  opts($('#hid-status'), [...STATUS, 'Retirado do controle'], 'Todos');
 }
 function renderTudo() { renderFiltros(); renderGeral(); renderExtTabela(); renderHidTabela(); }
 
