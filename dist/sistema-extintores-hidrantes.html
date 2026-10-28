@@ -678,11 +678,11 @@ td.nowrap{white-space:nowrap}
         <div class="panel bi-card">
           <h2 class="bi-h">Equipamentos que exigem ação</h2><p class="bi-note">Vencidos e com vencimento em até 10 dias.</p>
           <div class="toolbar">
-            <div class="field wide"><label for="bi-v-busca">Buscar</label><input id="bi-v-busca" type="text" placeholder="Nº, TAG, local, tipo…"></div>
+            <div class="field wide"><label for="bi-v-busca">Buscar</label><input id="bi-v-busca" type="text" placeholder="Nº, TAG, nº fabricação, unidade, local…"></div>
             <div class="field"><label for="bi-v-equip">Equipamento</label><select id="bi-v-equip"><option value="">Extintores e mangueiras</option><option value="Extintor">Só extintores</option><option value="Mangueira">Só mangueiras</option></select></div>
             <div class="field"><label for="bi-v-status">Situação</label><select id="bi-v-status"><option value="">Vencidos e até 10 dias</option><option value="Vencido">Só vencidos</option><option value="Vence em até 10 dias">Só até 10 dias</option></select></div>
           </div>
-          <div class="table-wrap bi-scroll"><table><thead><tr><th>Equipamento</th><th>Tipo</th><th>Local</th><th>Divisão</th><th>Motivo</th><th>Vencimento</th><th>Dias</th><th>Situação</th></tr></thead><tbody id="bi-tb-validade"></tbody></table></div>
+          <div class="table-wrap bi-scroll"><table><thead><tr><th>Equipamento</th><th>Tipo</th><th>Nº fabricação</th><th>Unidade</th><th>Local</th><th>Divisão</th><th>Motivo</th><th>Vencimento</th><th>Dias</th><th>Situação</th></tr></thead><tbody id="bi-tb-validade"></tbody></table></div>
           <div class="muted" id="bi-v-cont" style="font-size:13px"></div>
         </div>
       </div>
@@ -2164,18 +2164,20 @@ document.querySelectorAll('#cg-modo button').forEach(b => b.onclick = () => { CG
 
 /* --- dados derivados --- */
 function statusPorDias(d) { return d === null ? 'Sem teste' : d < 0 ? 'Vencido' : d <= 10 ? 'Vence em até 10 dias' : 'Liberado'; }
+// Unidade como no cabeçalho da planilha: "130-Redução III" (código da locação + área)
+function unidadeExt(it) { const a = String(it.area || '').trim(); if (/^\d{3}\s*-/.test(a)) return a; const m = /^(\d{2})/.exec(String(it.cod || '').trim()); return m && a ? m[1] + '0-' + a : a; }
 function validadeBI() {
   const rows = [];
   EXT.forEach(it => {
     const r = vencRecarga(it.recarga), t = vencTesteExt(it.teste);
     const due = r && t ? (r <= t ? r : t) : (r || t);
     const dias = due ? diasAte(due) : null;
-    rows.push({ equip: 'Extintor', nome: `${it.tag} · Nº ${it.n}`, tipo: it.tipo, local: it.local, divisao: it.geral, motivo: due && r && due.getTime() === r.getTime() ? 'Recarga' : 'Teste hidrostático', venc: due ? isoDe(due) : '', dias, status: statusPorDias(dias) });
+    rows.push({ equip: 'Extintor', nome: `${it.tag} · Nº ${it.n}`, tipo: it.tipo, fab: it.fab && !/^n\/?s$/i.test(it.fab) ? it.fab : '', unidade: unidadeExt(it), local: it.local, divisao: it.geral, motivo: due && r && due.getTime() === r.getTime() ? 'Recarga' : 'Teste hidrostático', venc: due ? isoDe(due) : '', dias, status: statusPorDias(dias) });
   });
   HID.forEach(it => {
     for (let k = 1; k <= Math.min(2, +it.qtdMang || 0); k++) {
       const t = it['teste' + k], due = vencMang(t), dias = due ? diasAte(due) : null;
-      rows.push({ equip: 'Mangueira', nome: `TAG ${it.tag} · Mangueira ${k}`, tipo: 'Mangueira ' + k, local: it.area + ' — ' + it.local, divisao: it.geral, motivo: 'Teste hidrostático', venc: due ? isoDe(due) : '', dias, status: statusPorDias(dias) });
+      rows.push({ equip: 'Mangueira', nome: `TAG ${it.tag} · Mangueira ${k}`, tipo: 'Mangueira ' + k, fab: it['fab' + k] || '', unidade: it.area || '', local: it.area + ' — ' + it.local, divisao: it.geral, motivo: 'Teste hidrostático', venc: due ? isoDe(due) : '', dias, status: statusPorDias(dias) });
     }
   });
   return rows;
@@ -2243,11 +2245,11 @@ function renderValidade() {
   $('#bi-tk-validade').innerHTML = `<b>${nBR(ve + vm)} equipamentos vencidos</b> (${nBR(ve)} extintores e ${nBR(vm)} mangueiras) e mais ${nBR(dz)} vencendo nos próximos 10 dias. Situação de ${fmt(isoDe(hoje()))}.`;
   // tabela
   const q = norm($('#bi-v-busca').value), eq = $('#bi-v-equip').value, st = $('#bi-v-status').value;
-  const lista = rows.filter(r => (r.status === 'Vencido' || r.status === 'Vence em até 10 dias') && (!eq || r.equip === eq) && (!st || r.status === st) && (!q || norm([r.nome, r.tipo, r.local, r.divisao].join(' ')).includes(q)))
+  const lista = rows.filter(r => (r.status === 'Vencido' || r.status === 'Vence em até 10 dias') && (!eq || r.equip === eq) && (!st || r.status === st) && (!q || norm([r.nome, r.tipo, r.fab, r.unidade, r.local, r.divisao].join(' ')).includes(q)))
     .sort((a, b) => a.dias - b.dias);
   const mostra = lista.slice(0, 300);
-  $('#bi-tb-validade').innerHTML = mostra.length ? mostra.map(r => `<tr><td class="nowrap num">${esc(r.nome)}</td><td class="nowrap">${esc(r.tipo)}</td><td>${esc(r.local)}</td><td>${esc(r.divisao)}</td><td>${esc(r.motivo)}</td><td class="num nowrap">${fmt(r.venc)}</td><td class="num">${nBR(r.dias)}</td><td>${r.status === 'Vencido' ? chip('venc', '✕ Vencido') : chip('dez', '! Até 10 dias')}</td></tr>`).join('')
-    : `<tr><td colspan="8"><div class="bi-empty">Nenhum equipamento vencido ou vencendo com esses filtros.</div></td></tr>`;
+  $('#bi-tb-validade').innerHTML = mostra.length ? mostra.map(r => `<tr><td class="nowrap num">${esc(r.nome)}</td><td class="nowrap">${esc(r.tipo)}</td><td class="num nowrap">${esc(r.fab || '—')}</td><td class="nowrap">${esc(r.unidade || '—')}</td><td>${esc(r.local)}</td><td>${esc(r.divisao)}</td><td>${esc(r.motivo)}</td><td class="num nowrap">${fmt(r.venc)}</td><td class="num">${nBR(r.dias)}</td><td>${r.status === 'Vencido' ? chip('venc', '✕ Vencido') : chip('dez', '! Até 10 dias')}</td></tr>`).join('')
+    : `<tr><td colspan="10"><div class="bi-empty">Nenhum equipamento vencido ou vencendo com esses filtros.</div></td></tr>`;
   $('#bi-v-cont').textContent = lista.length > mostra.length ? `Mostrando os ${mostra.length} mais urgentes de ${nBR(lista.length)}. Use a busca para achar os demais.` : `${nBR(lista.length)} equipamento(s).`;
   if (!window.d3) return;
   // por divisão
