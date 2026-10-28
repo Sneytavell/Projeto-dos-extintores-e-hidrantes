@@ -518,7 +518,7 @@
         <div class="cr-mesnav"><button class="btn small" type="button" id="bp-ant" aria-label="Mês anterior">‹</button><strong id="bp-mes"></strong><button class="btn small" type="button" id="bp-prox" aria-label="Próximo mês">›</button><button class="btn small" type="button" id="bp-hoje" hidden>Voltar para o mês atual</button></div>
         <nav class="subtabs bp-grupos" id="bp-tipo"><button type="button" data-t="">Tudo</button><button type="button" data-t="e">Extintores</button><button type="button" data-t="h">Mangueiras (hidrantes)</button></nav>
         <nav class="subtabs bp-grupos" id="bp-grupos" style="flex-wrap:wrap"></nav>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="muted" style="font-size:13px">Comparar com:</span><nav class="subtabs bp-grupos" id="bp-ref"><button type="button" data-r="anterior">Equipe anterior (mesmo grupo)</button><button type="button" data-r="plano">Cronograma</button></nav></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="muted" style="font-size:13px">Comparar com:</span><nav class="subtabs bp-grupos" id="bp-ref"><button type="button" data-r="anterior">Equipe anterior (mesmo grupo)</button><button type="button" data-r="estat">Estatística (meses anteriores)</button><button type="button" data-r="plano">Cronograma</button></nav></div>
         <p class="bi-take" id="bi-tk-plano"></p>
         <div class="kpis bi-kpis4" id="bi-k-plano"></div>
         <div class="panel bi-card"><h2 class="bi-h">Avanço acumulado no mês</h2><p class="bi-note">Itens inspecionados (acumulado) contra a referência. Os números "+N" mostram quanto foi feito em cada dia; passe o mouse no gráfico para ver extintores e hidrantes do dia. A linha tracejada projeta o ritmo atual até o fim do mês.</p>
@@ -2287,6 +2287,40 @@ function renderPlano() {
     } else {
       $('#bp-leg-ref').textContent = 'Planejado (sem dados de ' + nmPrev + ')';
       $('#bi-tk-plano').innerHTML = `<span class="muted">Sem inspeções registradas em ${esc(nmPrev)} para comparar; mostrando o cronograma.</span> ` + $('#bi-tk-plano').innerHTML;
+    }
+  } else if (modoRef === 'estat' && !futuroSemDado(ym)) {
+    // planejado estatístico: como os meses anteriores avançaram ao longo do mês (mediana), aplicado ao total deste mês
+    const itens = locs.flatMap(l => l.itens), diaH = +hojeRow.dia.slice(8, 10);
+    const meses = Object.keys(MES_TODOS).filter(m => m < ym && m >= ymSoma(ym, -12)).sort().reverse();
+    const curvas = [];
+    for (const m of meses) {
+      const md = m === ymAtual() ? { ...(MES_TODOS[m] || {}), ...BI.mes } : (MES_TODOS[m] || {});
+      const ds = itens.map(k => md[k]).filter(d => d && String(d).startsWith(m)).map(d => +String(d).slice(8, 10));
+      if (!total || ds.length < total * 0.2) continue; // mês sem dados suficientes (não importado) fica de fora
+      const ndm = new Date(+m.slice(0, 4), +m.slice(5, 7), 0).getDate();
+      curvas.push({ m, f: pos => ds.filter(x => x <= pos * ndm + 1e-9).length / total, fim: ds.length / total });
+      if (curvas.length >= 6) break;
+    }
+    if (curvas.length) {
+      const med = a => { const o = a.slice().sort((x, y) => x - y), i = (o.length - 1) / 2; return (o[Math.floor(i)] + o[Math.ceil(i)]) / 2; };
+      const qtl = (a, q) => { const o = a.slice().sort((x, y) => x - y); return o[Math.round((o.length - 1) * q)]; };
+      curva.forEach(c => { const pos = +c.dia.slice(8, 10) / nd; c.plan = Math.round(med(curvas.map(cv => cv.f(pos))) * total); });
+      const esperadoH = passado ? curva[curva.length - 1].plan : hojeRow.plan, fimEsp = Math.round(med(curvas.map(cv => cv.fim)) * total);
+      const piorFim = Math.round(qtl(curvas.map(cv => cv.fim), 0) * total), melhorFim = Math.round(qtl(curvas.map(cv => cv.fim), 1) * total);
+      const dv = real - esperadoH, nomes = curvas.map(cv => nomeMesYm(cv.m).slice(0, 3)).reverse().join(', ');
+      const dia50 = (() => { const c = curva.find(c => c.plan >= total * 0.5); return c ? +c.dia.slice(8, 10) : null; })();
+      rotRef = 'Estatístico';
+      $('#bp-leg-ref').textContent = 'Planejado estatístico (mediana de ' + curvas.length + (curvas.length > 1 ? ' meses' : ' mês') + ')';
+      $('#bi-k-plano').innerHTML = kpiStatic([
+        { s: 'Azul', l: passado ? 'Realizado no mês' : 'Realizado até dia ' + diaH, v: nBR(real), sub: `${pc(real)} de ${nBR(total)} itens` },
+        { s: '', l: passado ? 'Esperado no mês' : 'Esperado até dia ' + diaH, v: nBR(esperadoH), sub: `${pc(esperadoH)} · mediana de ${curvas.length} ${curvas.length > 1 ? 'meses' : 'mês'}` },
+        { s: dv >= 0 ? 'Liberado' : 'Vencido', l: 'Diferença', v: (dv > 0 ? '+' : '') + nBR(dv), sub: dv >= 0 ? 'itens à frente do histórico' : 'itens atrás do histórico' },
+        { s: 'Dez', l: 'Esperado no fim do mês', v: nBR(fimEsp), sub: `${pc(fimEsp)} · faixa ${nBR(piorFim)}–${nBR(melhorFim)}` }]);
+      $('#bi-tk-plano').innerHTML = `Pelo histórico (${esc(nomes)}), ${passado ? 'o mês costuma fechar' : 'até o dia ' + diaH + ' costumam estar feitos'} <b>${nBR(esperadoH)}</b> itens (${pc(esperadoH)})${dia50 ? `; a metade dos itens costuma ser alcançada por volta do dia ${dia50}` : ''}. ${passado ? 'Neste mês foram' : 'Agora são'} <b>${nBR(real)}</b>: <b>${dv >= 0 ? 'à frente' : 'atrás'} em ${nBR(Math.abs(dv))}</b>. O histórico indica fechar com cerca de <b>${nBR(fimEsp)}</b> de ${nBR(total)} (entre ${nBR(piorFim)} e ${nBR(melhorFim)}).`;
+      $('#bi-plano-origem').textContent = 'Linha cinza: planejado estatístico — mediana do avanço acumulado dos últimos meses com dados (' + nomes + '), no mesmo ponto do mês, aplicada ao total de itens deste filtro. Meses com menos de 20% de inspeções registradas ficam de fora.';
+    } else {
+      $('#bp-leg-ref').textContent = 'Planejado (sem histórico)';
+      $('#bi-tk-plano').innerHTML = `<span class="muted">Ainda não há meses anteriores com inspeções suficientes para o planejado estatístico; mostrando o cronograma. Importe os meses em "Importar meses anteriores".</span> ` + $('#bi-tk-plano').innerHTML;
     }
   } else $('#bp-leg-ref').textContent = 'Planejado';
   if (gf || tf) $('#bi-tk-plano').innerHTML = '<b>' + [tf === 'e' ? 'Extintores' : tf === 'h' ? 'Mangueiras' : '', gf ? 'Grupo ' + gf : ''].filter(Boolean).join(' · ') + ':</b> ' + $('#bi-tk-plano').innerHTML;
