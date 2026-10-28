@@ -3252,7 +3252,9 @@ function lerCabecalhoFolha(rows) {
   if (mm) { const i = MESES_PT.indexOf(mm[1].toLowerCase()); if (i >= 0) ym = `${mm[2] || (data ? data.slice(0, 4) : anoData || hoje().getFullYear())}-${String(i + 1).padStart(2, '0')}`; }
   if (!ym && data) ym = data.slice(0, 7);
   const md = texto.match(/Data:\s*\/?\s*(\d{1,2})\s*\/\s*(\d{4})/i); if (!ym && md) ym = `${md[2]}-${md[1].padStart(2, '0')}`;
-  return { texto, data, ym };
+  const un = (texto.match(/Unidade:\s*(.+?)(?:\s{2,}|\s+[ÁA]rea:|$)/i) || [])[1] || '';
+  const ar = (texto.match(/[ÁA]rea:\s*(.+?)(?:\s{2,}|\s+M[eê]s:|$)/i) || [])[1] || '';
+  return { texto, data, ym, unidade: un.trim(), areaCab: ar.trim() };
 }
 function lerRodapeFolha(rows) {
   let bcs = '';
@@ -3282,13 +3284,14 @@ function lerFolhaExtintor(nome, rows) {
   const mapa = {}; ITENS_EXT.forEach(t => { const j = h.indexOf(chaveCab(t)); if (j >= 0) mapa['g:' + t] = j; });
   ITENS_CO2.concat(['Pesagem']).forEach(t => { const j = h.indexOf(chaveCab(t)); if (j >= 0) mapa['co2:' + t] = j; });
   const jRec = h.findIndex(c => c.startsWith('ultimarecarga')), jTst = h.findIndex(c => c.startsWith('ultimoteste')), jPv = h.indexOf('pesovazio'), jPc = h.indexOf('pesocheio');
+  const jTp = h.findIndex(c => c.startsWith('tipo')), jFb = h.findIndex(c => c.includes('fabrica'));
   const fim = rows.findIndex((r, i) => i > hi && (r || []).some(c => typeof c === 'string' && /PLANO DE A/i.test(c)));
   const itens = []; let prefixo = (nome.match(/^\d+/) || [''])[0];
   rows.slice(hi + 1, fim < 0 ? rows.length : fim).forEach(r => {
     let tag = r?.[cn]; if (tag == null || String(tag).trim() === '') return;
     tag = String(tag).trim(); if (tag.includes('/')) prefixo = tag.split('/')[0]; else if (/^\d+$/.test(tag) && prefixo) tag = prefixo + '/' + tag.padStart(2, '0');
     const respostas = {}; Object.entries(mapa).forEach(([k, j]) => { const v = valCNC(r[j]); if (v) respostas[k] = v; });
-    itens.push({ pos: itens.length + 1, num: parseInt(String(tag).split('/')[1]) || itens.length + 1, tag: String(tag).trim(), localizacao: String(r[cn + 1] ?? '').trim(), respostas, recarga: dataIso(r[jRec]), teste: dataIso(r[jTst]), pesoVazio: numBR(r[jPv]), pesoCheio: numBR(r[jPc]) });
+    itens.push({ pos: itens.length + 1, num: parseInt(String(tag).split('/')[1]) || itens.length + 1, tag: String(tag).trim(), localizacao: String(r[cn + 1] ?? '').trim(), respostas, tipoCap: jTp >= 0 ? String(r[jTp] ?? '').trim() : '', fab: jFb >= 0 ? String(r[jFb] ?? '').trim().replace(/\.0$/, '') : '', recarga: dataIso(r[jRec]), teste: dataIso(r[jTst]), pesoVazio: numBR(r[jPv]), pesoCheio: numBR(r[jPc]) });
   });
   return { nome, tipo: 'ext', ...cab, bcs, itens, plano: lerPlanoAcao(rows, fim < 0 ? hi : fim) };
 }
@@ -3329,7 +3332,8 @@ function analisarPlanilhaCampo(wb, arquivo, opc = {}) {
   const idxExt = new Map(); ALL_EXT.forEach(it => idxExt.set(String(it.tag).trim() + '|' + norm(it.localizacao), it));
   const tagsExt = new Map(); ALL_EXT.forEach(it => { const k = String(it.tag).trim(); tagsExt.set(k, (tagsExt.get(k) || []).concat(it)); });
   const idxHid = new Map(); ALL_HID.forEach(it => idxHid.set(String(it.tag).trim() + '|' + norm(it.local), it));
-  const res = { arquivo, folhas: folhas.length, semData: [], registros: [], naoEncontrados: [], semResposta: 0, ajustes: [], meses: {}, presumidas: [] };
+  const res = { arquivo, folhas: folhas.length, semData: [], registros: [], naoEncontrados: [], semResposta: 0, ajustes: [], meses: {}, presumidas: [], pendentes: [], novos: {} };
+  const grupoArq = (String(arquivo).match(/^\s*(\d+\.\d+)/) || [])[1] || '';
   folhas.forEach(f => {
     if (opc.ym) { f.ym = opc.ym; if (f.data && f.data.slice(0, 7) !== opc.ym) f.data = null; }
     if (!f.data && f.ym && opc.semDia) { const [yy, mo] = f.ym.split('-').map(Number); f.data = isoDe(new Date(yy, mo, 0)); res.presumidas.push(f.nome); }
@@ -3343,7 +3347,21 @@ function analisarPlanilhaCampo(wb, arquivo, opc = {}) {
         it = idxHid.get(i.tag + '|' + norm(i.local));
         if (!it && i.area) { const c = ALL_HID.filter(h => String(h.tag).trim() === i.tag && new RegExp('^\\s*' + i.area + '\\b').test(String(h.area))); if (c.length === 1) it = c[0]; }
       }
-      if (!it) { res.naoEncontrados.push(`${f.nome}: ${tipo === 'ext' ? i.tag + ' — ' + i.localizacao : 'TAG ' + i.tag + ' — ' + i.local}`); return; }
+      if (!it) {
+        res.naoEncontrados.push(`${f.nome}: ${tipo === 'ext' ? i.tag + ' — ' + i.localizacao : 'TAG ' + i.tag + ' — ' + i.local}`);
+        // item fora do inventário: prepara a inclusão (com a inspeção) caso o usuário confirme
+        const novo = tipo === 'ext'
+          ? { tipo: 'ext', tag: i.tag, localizacao: i.localizacao, tipoCap: i.tipoCap || '', fab: i.fab || '', recarga: i.recarga || '', teste: i.teste || '', geral: f.unidade || '', area: f.areaCab || '', local: f.areaCab || '', aba: f.nome }
+          : { tipo: 'hid', tag: i.tag, area: i.area || '', local: i.local || '', geral: f.unidade || '', teste1: i.teste1 || '', teste2: i.teste2 || '', qtdMang: [i.teste1, i.teste2].filter(Boolean).length || '', aba: f.nome };
+        const idNovo = tipo === 'ext' ? 'e_' + idNovoExt(i.tag) + '_' + hashKey(norm(i.localizacao)) : 'h_' + hashKey(i.tag + '|' + norm(i.local));
+        if (!res.novos[idNovo]) res.novos[idNovo] = { ...novo, _folha: f.nome };
+        const chaveN = tipo === 'ext' ? idNovoExt(i.tag) : chaveHid(novo);
+        const regN = { id: Date.now() + res.registros.length + res.pendentes.length, importId: `${f.ym || f.data.slice(0, 7)}:${f.nome}:${i.pos}`, data: f.data + 'T12:00:00', por: null, inspetor: f.bcs || 'Planilha de campo', importado: arquivo, respostas: i.respostas, nc: f.plano[i.num] || '' };
+        if (tipo === 'hid') { regN.tag = i.tag; regN.area = i.area; }
+        res.pendentes.push({ tipo, chave: chaveN, reg: regN, ym: f.data.slice(0, 7), mesKey: (tipo === 'ext' ? 'e_' : 'h_') + chaveN, data: f.data, folha: f.nome });
+        return;
+      }
+      (f._grupos = f._grupos || {})[it._grupo || ''] = ((f._grupos || {})[it._grupo || ''] || 0) + 1;
       const chave = tipo === 'ext' ? String(it.n) : it._key;
       const reg = { id: Date.now() + res.registros.length, importId: `${f.ym || f.data.slice(0, 7)}:${f.nome}:${i.pos}`, data: f.data + 'T12:00:00', por: null, inspetor: f.bcs || 'Planilha de campo', importado: arquivo, respostas: i.respostas, nc: f.plano[i.num] || '' };
       if (tipo === 'ext') { if (i.pesoVazio != null) reg.pesoVazio = i.pesoVazio; if (i.pesoCheio != null) reg.pesoCheio = i.pesoCheio; }
@@ -3354,7 +3372,16 @@ function analisarPlanilhaCampo(wb, arquivo, opc = {}) {
       else { const a = {}; if (i.teste1 && (!it.teste1 || i.teste1 > it.teste1)) a.teste1 = i.teste1; if (i.teste2 && (!it.teste2 || i.teste2 > it.teste2)) a.teste2 = i.teste2; if (Object.keys(a).length) res.ajustes.push({ tipo, chave, a }); }
     });
   });
+  // grupo dos itens novos: o mais comum entre os itens conhecidos da mesma folha (ou o do nome do arquivo)
+  const grupoFolha = {}; folhas.forEach(f => { const g = Object.entries(f._grupos || {}).filter(([k]) => k).sort((a, b) => b[1] - a[1])[0]; grupoFolha[f.nome] = g ? g[0] : grupoArq; });
+  Object.values(res.novos).forEach(x => { x.grupo = grupoFolha[x._folha] || grupoArq; delete x._folha; });
   return res;
+}
+// inclui no inventário os itens que vieram na planilha e não estavam no sistema, e junta as inspeções deles
+async function incluirPendentes(res) {
+  for (const [id, d] of Object.entries(res.novos || {})) { if (!NOVOS[id]) await S.salvarNovo(id, { ...d, origem: res.arquivo, em: new Date().toISOString(), por: meuId() }); }
+  (res.pendentes || []).forEach(p => { res.registros.push({ tipo: p.tipo, chave: p.chave, reg: p.reg }); (res.meses[p.ym] = res.meses[p.ym] || {})[p.mesKey] = p.data; });
+  res.pendentes = [];
 }
 async function gravarImportacao(res, progresso) {
   let feitos = 0, pulados = 0; const total = res.registros.length;
@@ -3388,13 +3415,22 @@ function modalImportacao(res) {
     </dl>
     ${res.semData.length ? `<p class="msg erro" style="margin:0">Folhas preenchidas mas sem a data no cabeçalho (não serão importadas): ${esc(res.semData.join(', '))}. Preencha o dia em "Data:" e importe de novo.</p>` : ''}
     ${res.naoEncontrados.length ? `<details><summary>${nBR(res.naoEncontrados.length)} equipamento(s) não encontrados no inventário</summary><ul style="font-size:12px;margin:6px 0 0;padding-left:18px">${res.naoEncontrados.map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>` : ''}
+    ${res.pendentes.length ? `<label class="pm-chk" style="align-items:flex-start"><input type="checkbox" id="im-incluir" checked> <span><strong>Incluir no sistema os ${nBR(Object.keys(res.novos).length)} equipamento(s) que não estão no inventário</strong> e lançar as ${nBR(res.pendentes.length)} inspeção(ões) deles. Ficam no grupo da planilha e podem ser retirados depois.</span></label>` : ''}
     <p class="bi-note">Itens só com "NA" ou em branco contam como não inspecionados. Importar de novo a mesma planilha não duplica registros.</p>
-    <div class="form-actions"><span class="muted" id="im-aviso" role="status"></span><button class="btn" type="button" id="im-cancelar">Cancelar</button><button class="btn primary" type="button" id="im-ok"${res.registros.length ? '' : ' disabled'}>Importar ${nBR(res.registros.length)} inspeções</button></div></div>`;
+    <div class="form-actions"><span class="muted" id="im-aviso" role="status"></span><button class="btn" type="button" id="im-cancelar">Cancelar</button><button class="btn primary" type="button" id="im-ok"${res.registros.length || res.pendentes.length ? '' : ' disabled'}>Importar ${nBR(res.registros.length + res.pendentes.length)} inspeções</button></div></div>`;
   $('#modal-root').appendChild(bg); bg.querySelector('#im-arq').textContent = res.arquivo;
   bg.querySelector('#im-cancelar').onclick = () => bg.remove();
   bg.querySelector('#im-ok').onclick = async () => {
     const b = bg.querySelector('#im-ok'), av = bg.querySelector('#im-aviso'); b.disabled = true; bg.querySelector('#im-cancelar').disabled = true;
     try {
+      const inc = bg.querySelector('#im-incluir');
+      if (inc) {
+        if (inc.checked) {
+          av.textContent = 'Incluindo equipamentos novos…';
+          await incluirPendentes(res);
+        }
+        res.pendentes = []; inc.closest('label').remove();
+      }
       const r = await gravarImportacao(res, t => av.textContent = t);
       toast(`${nBR(r.feitos)} inspeções importadas${r.pulados ? `, ${nBR(r.pulados)} já existiam` : ''}.`); bg.remove();
       renderTudo(); renderBI(); renderCronograma();
@@ -3410,6 +3446,7 @@ function abrirImportarMeses() {
     <div class="ar-chks"><label><input type="checkbox" id="im2-semdia" checked> Folhas sem o dia na Data: usar o último dia do mês</label></div>
     <div class="gp-drop" id="im2-drop" tabindex="0" role="button"><strong>Escolher planilhas (.xlsx)</strong><div class="muted" style="font-size:13px">ou arraste os arquivos aqui · pode enviar vários de uma vez</div><input id="im2-file" type="file" accept=".xlsx,.xls" multiple hidden></div>
     <div class="table-wrap bi-scroll" id="im2-tab" hidden><table><thead><tr><th>Arquivo</th><th>Mês</th><th>Folhas</th><th>Inspeções</th><th>Com NC</th><th>Datas atualizadas</th><th>Avisos</th></tr></thead><tbody id="im2-tb"></tbody></table></div>
+    <label class="pm-chk" id="im2-inc-w" hidden style="align-items:flex-start"><input type="checkbox" id="im2-inc" checked> <span id="im2-inc-t"></span></label>
     <div class="form-actions"><span class="muted" id="im2-aviso" role="status"></span><button class="btn primary" type="button" id="im2-ok" disabled>Importar tudo</button></div>`);
   bg.querySelector('.modal').style.maxWidth = '960px';
   const $m = q => bg.querySelector(q); let lista = [];
@@ -3424,7 +3461,11 @@ function abrirImportarMeses() {
     $m('#im2-tab').hidden = !lista.length;
     $m('#im2-tb').innerHTML = lista.map(x => x.erro ? `<tr><td></td><td colspan="6" class="muted">${esc(x.erro)}</td></tr>` : `<tr><td></td><td class="nowrap">${esc(nomeMeses(x.res))}</td><td class="num">${nBR(x.res.folhas)}</td><td class="num">${nBR(x.res.registros.length)}</td><td class="num">${nBR(x.res.registros.filter(r => Object.values(r.reg.respostas).includes('NC') || r.reg.nc).length)}</td><td class="num">${nBR(x.res.ajustes.length)}</td><td style="font-size:12px">${[x.res.presumidas.length ? x.res.presumidas.length + ' folhas com dia presumido' : '', x.res.semData.length ? x.res.semData.length + ' folhas sem data (ficam de fora): ' + esc(x.res.semData.join(', ')) : '', x.res.naoEncontrados.length ? x.res.naoEncontrados.length + ' itens não encontrados' : '', x.feito ? '<strong>' + x.feito + '</strong>' : ''].filter(Boolean).join(' · ') || '—'}</td></tr>`).join('');
     $m('#im2-tb').querySelectorAll('tr').forEach((tr, i) => { tr.firstElementChild.textContent = lista[i].nome; });
-    const total = lista.filter(x => x.res && !x.feito).reduce((s, x) => s + x.res.registros.length, 0);
+    const pend = lista.filter(x => x.res && !x.feito), nPend = pend.reduce((s, x) => s + (x.res.pendentes || []).length, 0);
+    const nNovos = new Set(pend.flatMap(x => Object.keys(x.res.novos || {}).filter(id => !NOVOS[id]))).size;
+    $m('#im2-inc-w').hidden = !nPend;
+    $m('#im2-inc-t').innerHTML = `<strong>Incluir no sistema os ${nBR(nNovos)} equipamento(s) que não estão no inventário</strong> e lançar as ${nBR(nPend)} inspeção(ões) deles. Ficam no grupo da planilha e podem ser retirados depois.`;
+    const total = pend.reduce((s, x) => s + x.res.registros.length + ($m('#im2-inc').checked ? (x.res.pendentes || []).length : 0), 0);
     $m('#im2-ok').disabled = !total; $m('#im2-ok').textContent = total ? `Importar tudo (${nBR(total)} inspeções)` : 'Importar tudo';
   };
   async function ler(files) {
@@ -3439,11 +3480,13 @@ function abrirImportarMeses() {
     }
     $m('#im2-aviso').textContent = '';
   }
+  $m('#im2-inc').onchange = () => desenhar();
   $m('#im2-mes').onchange = $m('#im2-semdia').onchange = () => { if (lista.length) $m('#im2-aviso').textContent = 'Mudou a opção: envie os arquivos de novo para reler.'; };
   $m('#im2-ok').onclick = async () => {
     const b = $m('#im2-ok'); b.disabled = true;
     try {
       for (const x of lista.filter(x => x.res && !x.feito)) {
+        if ($m('#im2-inc').checked && x.res.pendentes?.length) { $m('#im2-aviso').textContent = x.nome + ': incluindo equipamentos novos…'; await incluirPendentes(x.res); }
         const r = await gravarImportacao(x.res, t => { $m('#im2-aviso').textContent = x.nome + ': ' + t; });
         x.feito = `${nBR(r.feitos)} importadas${r.pulados ? ', ' + nBR(r.pulados) + ' já existiam' : ''}`; desenhar();
       }
