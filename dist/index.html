@@ -564,13 +564,13 @@ td.nowrap{white-space:nowrap}
 
       <div id="tab-ext" class="kpi-group" style="gap:12px" hidden>
         <div class="toolbar">
-          <div class="field wide"><label for="ext-busca">Buscar</label><input id="ext-busca" type="text" placeholder="Locação, localização, fabricação…"></div>
+          <div class="field wide"><label for="ext-busca">Buscar</label><input id="ext-busca" type="text" placeholder="Locação, unidade, localização, fabricação…"></div>
           <div class="field"><label for="ext-div">Divisão</label><select id="ext-div"></select></div>
           <div class="field"><label for="ext-tipo">Tipo</label><select id="ext-tipo"></select></div>
           <div class="field"><label for="ext-status">Status</label><select id="ext-status"></select></div>
           <button class="btn" type="button" id="ext-csv">Copiar CSV</button>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Locação</th><th>Divisão</th><th>Área</th><th>Local</th><th>Localização</th><th>Tipo / Capacidade</th><th>Nº Fabricação</th><th>Última recarga</th><th>Último teste</th><th>Inspeção mensal</th><th>Status</th></tr></thead><tbody id="ext-tbody"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Locação</th><th>Divisão</th><th>Unidade</th><th>Local</th><th>Localização</th><th>Tipo / Capacidade</th><th>Nº Fabricação</th><th>Última recarga</th><th>Último teste</th><th>Inspeção mensal</th><th>Status</th></tr></thead><tbody id="ext-tbody"></tbody></table></div>
         <div class="pager" id="ext-pager"></div>
       </div>
 
@@ -997,9 +997,9 @@ function statusHid(it) {
 let TODOS_EXT = [], TODOS_HID = [], ALL_EXT = [], ALL_HID = [], RET_EXT = [], RET_HID = [];
 function montar() {
   const vale = a => a && (!BASE_EM || a.em > BASE_EM);
-  const novosE = Object.values(NOVOS).filter(x => x.tipo === 'ext' && !BASE_EXT.some(b => String(b.tag).trim() === x.tag && norm(b.localizacao) === norm(x.localizacao))).map(x => ({ n: idNovoExt(x.tag), cod: '', geral: x.geral || '', area: x.area || '', local: x.local || '', localizacao: x.localizacao || '', tag: x.tag, tipo: x.tipoCap || '', fab: x.fab || '', recarga: x.recarga || '', teste: x.teste || '', _novo: x.grupo || '' }));
+  const novosE = Object.values(NOVOS).filter(x => x.tipo === 'ext' && !BASE_EXT.some(b => String(b.tag).trim() === x.tag && norm(b.localizacao) === norm(x.localizacao))).map(x => ({ n: idNovoExt(x.tag), cod: '', geral: x.geral || '', area: x.area || '', local: x.local || '', localizacao: x.localizacao || '', tag: x.tag, tipo: x.tipoCap || '', fab: x.fab || '', recarga: x.recarga || '', teste: x.teste || '', unidade: x.unidade || (/^\d{3}\s*-/.test(x.geral || '') ? x.geral : ''), _novo: x.grupo || '' }));
   const novosH = Object.values(NOVOS).filter(x => x.tipo === 'hid').map(x => ({ geral: x.geral || '', area: x.area || '', local: x.local || '', tag: x.tag, hidrante: '', abrigos: x.abrigos || '', qtdMang: x.qtdMang ?? '', tamanho: '', teste1: x.teste1 || '', teste2: x.teste2 || '', m1: '', m2: '', _novo: x.grupo || '' })).filter(x => !BASE_HID.some(b => chaveHid(b) === chaveHid(x)));
-  EXT = [...BASE_EXT, ...novosE].map(b => { const a = AJ.ext[String(b.n)]; const it = { ...b }; if (vale(a)) { ['recarga', 'teste', 'fab', 'tipo'].forEach(f => { if (a[f]) it[f] = a[f]; }); if (a.retirado) { it._retirado = a.retirado; it._retMotivo = a.retiradoMotivo || ''; } } return it; });
+  EXT = [...BASE_EXT, ...novosE].map(b => { const a = AJ.ext[String(b.n)]; const it = { ...b }; if (vale(a)) { ['recarga', 'teste', 'fab', 'tipo', 'unidade'].forEach(f => { if (a[f]) it[f] = a[f]; }); if (a.retirado) { it._retirado = a.retirado; it._retMotivo = a.retiradoMotivo || ''; } } return it; });
   HID = [...BASE_HID, ...novosH].map((b, i) => { const it = { ...b, _idx: i, _key: chaveHid(b) }; const a = AJ.hid[it._key]; if (vale(a)) { ['teste1', 'teste2', 'm1', 'm2', 'fab1', 'fab2'].forEach(f => { if (a[f]) it[f] = a[f]; }); if (a.retirado) { it._retirado = a.retirado; it._retMotivo = a.retiradoMotivo || ''; } } return it; });
   EXT.forEach(it => { it._status = statusExt(it); it._grupo = SEED.gExt[it.n] || it._novo || ''; });
   HID.forEach(it => { [1, 2].forEach(k => { const st = statusData(vencMang(it['teste' + k])); if (st) it['m' + k] = st; }); it._status = statusHid(it); it._grupo = SEED.gHid[String(it.tag) + '|' + norm(it.local)] || it._novo || ''; });
@@ -1235,7 +1235,7 @@ function filtrarExt() {
   const q = norm($('#ext-busca').value), dv = $('#ext-div').value, tp = $('#ext-tipo').value, st = $('#ext-status').value;
   const base = st === 'Retirado do controle' ? RET_EXT.filter(i => !areasVisiveis() || areasVisiveis().grupos.includes(i._grupo)) : EXT;
   return base.filter(i => (!dv || i.geral === dv) && (!tp || i.tipo === tp) && (!st || st === 'Retirado do controle' || i._status === st) &&
-    (!q || norm([i.n, i.tag, i.localizacao, i.local, i.area, i.tipo, i.fab, i.cod].join(' ')).includes(q)));
+    (!q || norm([i.tag, unidadeExt(i), i.localizacao, i.local, i.area, i.tipo, i.fab, i.cod].join(' ')).includes(q)));
 }
 function tipEx(i) { const p = []; if (i.recarga) p.push('Recarga vence: ' + fmt(isoDe(vencRecarga(i.recarga)))); if (i.teste) p.push('Teste vence: ' + fmt(isoDe(vencTesteExt(i.teste)))); return p.join(' · '); }
 /* inspeção mensal por item: vence no mesmo dia do mês seguinte (20/10 → 20/11); se o dia não existir (ex.: 30/01 → fevereiro), cai no último dia do mês */
@@ -1252,7 +1252,7 @@ function celVenc(iso, due) { if (!iso) return '—'; const st = statusData(due);
 function celMensal(key) { const m = mensalItem(key); if (!m.ultima) return chip('sem', 'sem registro'); return `${fmt(m.ultima)}<div class="venc-sub ${m.st === 'Vencida' ? 'v' : m.st === 'Vence em breve' ? 'a' : ''}">vence ${fmt(m.venc)}</div>`; }
 function renderExtTabela() {
   const podeEd = pode.inspecionar(), l = filtrarExt(), pg = l.slice(pag.ext * POR, pag.ext * POR + POR);
-  $('#ext-tbody').innerHTML = pg.length ? pg.map(i => `<tr><td class="nowrap num"><strong>${esc(i.tag)}</strong>${podeEd ? `<button class="ed-ico" type="button" data-ed-ext="${esc(i.n)}" title="Alterar dados (troca de extintor, nº de fabricação)" aria-label="Alterar dados do extintor ${esc(i.tag)}">✎</button>` : ''}</td><td>${esc(i.geral)}</td><td>${esc(i.area)}</td><td>${esc(i.local)}</td><td>${esc(i.localizacao)}</td><td class="nowrap">${esc(i.tipo)}</td><td class="num">${esc(i.fab)}</td><td class="num nowrap">${celVenc(i.recarga, vencRecarga(i.recarga))}</td><td class="num nowrap">${celVenc(i.teste, vencTesteExt(i.teste))}</td><td class="num nowrap">${celMensal('e_' + i.n)}</td><td title="${esc(i._retirado ? 'Retirado em ' + fmt(i._retirado) + (i._retMotivo ? ' · ' + i._retMotivo : '') : tipEx(i))}">${i._retirado ? chip('sem', 'Retirado') : badge(i._status)}</td></tr>`).join('')
+  $('#ext-tbody').innerHTML = pg.length ? pg.map(i => `<tr><td class="nowrap num"><strong>${esc(i.tag)}</strong>${podeEd ? `<button class="ed-ico" type="button" data-ed-ext="${esc(i.n)}" title="Alterar dados (troca de extintor, nº de fabricação)" aria-label="Alterar dados do extintor ${esc(i.tag)}">✎</button>` : ''}</td><td>${esc(i.geral)}</td><td class="nowrap">${esc(unidadeExt(i))}</td><td>${esc(i.local)}</td><td>${esc(i.localizacao)}</td><td class="nowrap">${esc(i.tipo)}</td><td class="num">${esc(i.fab)}</td><td class="num nowrap">${celVenc(i.recarga, vencRecarga(i.recarga))}</td><td class="num nowrap">${celVenc(i.teste, vencTesteExt(i.teste))}</td><td class="num nowrap">${celMensal('e_' + i.n)}</td><td title="${esc(i._retirado ? 'Retirado em ' + fmt(i._retirado) + (i._retMotivo ? ' · ' + i._retMotivo : '') : tipEx(i))}">${i._retirado ? chip('sem', 'Retirado') : badge(i._status)}</td></tr>`).join('')
     : `<tr><td colspan="11"><div class="empty-state"><strong>Nenhum extintor encontrado</strong>Limpe a busca ou os filtros para ver mais itens.</div></td></tr>`;
   pager($('#ext-pager'), 'ext', l.length, renderExtTabela);
 }
@@ -1327,7 +1327,7 @@ function renderResultados() {
   const kMes = i => (modoInsp === 'ext' ? 'e_' : 'h_') + (modoInsp === 'ext' ? i.n : i._key);
   const feitoMes = i => !!BI.mes[kMes(i)];
   let l = listaAtual().filter(i => (!g || i._grupo === g) && (!loc || locacaoDe(i) === loc) && (!fm || (fm === 'venc' ? i._status === 'Vencido' : fm === 'pend' ? !feitoMes(i) : feitoMes(i))));
-  if (q) l = l.filter(i => norm(modoInsp === 'ext' ? [i.n, i.tag, i.tipo, i.local, i.area, i.localizacao].join(' ') : [i.area, i.local, 'tag ' + i.tag, i.geral].join(' ')).includes(q));
+  if (q) l = l.filter(i => norm(modoInsp === 'ext' ? [i.tag, i.tipo, i.fab, unidadeExt(i), i.local, i.area, i.localizacao].join(' ') : [i.area, i.local, 'tag ' + i.tag, i.geral].join(' ')).includes(q));
   if (grade) l = l.slice().sort((a, b) => String(a.tag).localeCompare(String(b.tag), 'pt-BR', { numeric: true }));
   const lim = grade ? 300 : 20, mostra = l.slice(0, lim);
   el.className = 'results' + (grade ? ' grid' : '');
@@ -1414,7 +1414,7 @@ function formExt(el, it) {
   const co2 = /^co2/i.test(it.tipo || '');
   el.innerHTML = `<div class="item-card">
     <div class="item-head"><div><div class="muted">Extintor${it._grupo ? ' · Grupo ' + esc(it._grupo) : ''}</div><h2 class="num">${esc(it.tag)} · ${esc(it.tipo)}</h2></div><div style="display:flex;gap:8px;align-items:center"><span title="${esc(tipEx(it))}">${badge(it._status)}</span></div></div>
-    <dl class="facts" style="margin:0"><div><dt>Localização</dt><dd>${esc(it.localizacao)}</dd></div><div><dt>Local</dt><dd>${esc(it.local)}</dd></div><div><dt>Área</dt><dd>${esc(it.area)}</dd></div><div><dt>Nº Fabricação</dt><dd class="num">${esc(it.fab)}</dd></div><div><dt>Última recarga</dt><dd class="num">${fmtM(it.recarga)}</dd></div><div><dt>Último teste hidrostático</dt><dd class="num">${fmtM(it.teste)}</dd></div></dl>
+    <dl class="facts" style="margin:0"><div><dt>Localização</dt><dd>${esc(it.localizacao)}</dd></div><div><dt>Local</dt><dd>${esc(it.local)}</dd></div><div><dt>Unidade</dt><dd>${esc(unidadeExt(it))}</dd></div><div><dt>Nº Fabricação</dt><dd class="num">${esc(it.fab)}</dd></div><div><dt>Última recarga</dt><dd class="num">${fmtM(it.recarga)}</dd></div><div><dt>Último teste hidrostático</dt><dd class="num">${fmtM(it.teste)}</dd></div></dl>
     <hr class="divider">
     <div class="check-group"><h3>Itens gerais <small>13 itens</small></h3>${legenda}${checklist('g:', ITENS_EXT)}</div>
     ${co2 ? `<div class="check-group"><h3>Itens específicos <small>extintores de CO2</small></h3>${checklist('co2:', ITENS_CO2)}
@@ -1472,7 +1472,7 @@ function formHid(el, it) {
 
 /* ---------- alterar dados do equipamento (troca de extintor/mangueira) ---------- */
 const MOTIVOS_ALT = ['Substituição do extintor', 'Substituição da mangueira', 'Recarga', 'Teste hidrostático', 'Correção de cadastro', 'Retirado da área', 'Baixado / descartado', 'Outro'];
-const ROT_ALT = { fab: 'Nº de fabricação', tipo: 'Tipo / capacidade', recarga: 'Última recarga', teste: 'Último teste', fab1: 'Nº fabricação mangueira 1', teste1: 'Teste mangueira 1', fab2: 'Nº fabricação mangueira 2', teste2: 'Teste mangueira 2' };
+const ROT_ALT = { unidade: 'Unidade', fab: 'Nº de fabricação', tipo: 'Tipo / capacidade', recarga: 'Última recarga', teste: 'Último teste', fab1: 'Nº fabricação mangueira 1', teste1: 'Teste mangueira 1', fab2: 'Nº fabricação mangueira 2', teste2: 'Teste mangueira 2' };
 function altHtml(a) {
   const h = a?.historico || []; if (!h.length) return '';
   return `<hr class="divider"><div class="check-group"><h3>Alterações de cadastro</h3><div class="alt-list">${h.slice().reverse().map(x => `<div><strong>${esc(quando(x.em))}</strong> · ${esc(x.nome || '')} · ${esc(x.motivo || '')}<br>${Object.keys(x.para || {}).map(k => `${esc(ROT_ALT[k] || k)}: ${esc(/recarga|teste/.test(k) ? fmt(x.de?.[k]) : (x.de?.[k] || '—'))} → <strong>${esc(/recarga|teste/.test(k) ? fmt(x.para[k]) : x.para[k])}</strong>`).join(' · ')}${x.obs ? '<br><span class="muted">' + esc(x.obs) + '</span>' : ''}</div>`).join('')}</div></div>`;
@@ -2179,7 +2179,7 @@ function statusPorDias(d) { return d === null ? 'Sem teste' : d < 0 ? 'Vencido' 
 // Unidade como no cabeçalho da planilha: "130-Redução III" (código da locação + área)
 // tipo padronizado para agrupar ("ABC 30KG" = "ABC 30 KG")
 const tipoPadrao = t => String(t || '').toUpperCase().replace(/\s+/g, ' ').replace(/(\d)\s*(KG|LT|L)\b/g, '$1 $2').trim() || 'Sem tipo';
-function unidadeExt(it) { const a = String(it.area || '').trim(); if (/^\d{3}\s*-/.test(a)) return a; const m = /^(\d{2})/.exec(String(it.cod || '').trim()); return m && a ? m[1] + '0-' + a : a; }
+function unidadeExt(it) { if (it.unidade) return it.unidade; const a = String(it.area || '').trim(); if (/^\d{3}\s*-/.test(a)) return a; const m = /^(\d{2})/.exec(String(it.cod || '').trim()); return m && a ? m[1] + '0-' + a : a; }
 function validadeBI() {
   const rows = [];
   EXT.forEach(it => {
@@ -3149,8 +3149,10 @@ function analisarInventarioPlanilha(wb, arquivo) {
   const vazio = v => v == null || String(v).trim() === '' || /^n\/?a$/i.test(String(v).trim());
   const dif = (it, chave, tipo, campo, para) => {
     if (vazio(para)) return false;
-    const de = it[campo] || '';
+    const de = (campo === 'unidade' ? unidadeExt(it) : it[campo]) || '';
     const data = ['recarga', 'teste', 'teste1', 'teste2'].includes(campo);
+    const nUn = x => norm(x).replace(/\s*-\s*/g, '-');
+    if (campo === 'unidade' && nUn(de) === nUn(para)) return false;
     // datas: vale o mês (o vencimento é sempre no último dia do mês)
     const igual = campo === 'tipo' ? tipoPadrao(de) === tipoPadrao(para) : data ? String(de).slice(0, 7) === String(para).slice(0, 7) : String(de).trim().toUpperCase() === String(para).trim().toUpperCase();
     if (igual) return false;
@@ -3164,11 +3166,11 @@ function analisarInventarioPlanilha(wb, arquivo) {
       if (f.tipo === 'ext') {
         let it = idxExt.get(i.tag + '|' + norm(i.localizacao)); if (!it && (tagsExt.get(i.tag) || []).length === 1) it = tagsExt.get(i.tag)[0];
         escopoExt.add(String(i.tag).split('/')[0]);
-        if (!it) { const id = 'e_' + idNovoExt(i.tag) + '_' + hashKey(norm(i.localizacao)); if (!NOVOS[id]) res.novos[id] = { tipo: 'ext', tag: i.tag, localizacao: i.localizacao, tipoCap: i.tipoCap || '', fab: i.fab || '', recarga: i.recarga || '', teste: i.teste || '', geral: f.unidade || '', area: f.areaCab || '', local: f.areaCab || '', aba: f.nome, _folha: f.nome }; return; }
+        if (!it) { const id = 'e_' + idNovoExt(i.tag) + '_' + hashKey(norm(i.localizacao)); if (!NOVOS[id]) res.novos[id] = { tipo: 'ext', tag: i.tag, localizacao: i.localizacao, tipoCap: i.tipoCap || '', fab: i.fab || '', recarga: i.recarga || '', teste: i.teste || '', geral: f.unidade || '', unidade: f.unidade || '', area: f.areaCab || '', local: f.areaCab || '', aba: f.nome, _folha: f.nome }; return; }
         const k = 'e' + it.n; achados.add(k); if (it._grupo) { gf[it._grupo] = (gf[it._grupo] || 0) + 1; gruposVistos.add(it._grupo); }
         if (it._retirado) res.voltas.push({ tipo: 'ext', it, chave: String(it.n), aba: f.nome });
         let mudou = false;
-        [['fab', i.fab], ['tipo', i.tipoCap], ['recarga', i.recarga], ['teste', i.teste]].forEach(([c, v]) => { if (dif(it, String(it.n), 'ext', c, v)) mudou = true; });
+        [['unidade', f.unidade], ['fab', i.fab], ['tipo', i.tipoCap], ['recarga', i.recarga], ['teste', i.teste]].forEach(([c, v]) => { if (dif(it, String(it.n), 'ext', c, v)) mudou = true; });
         if (!mudou) res.iguais++;
       } else {
         let it = idxHid.get(i.tag + '|' + norm(i.local));
@@ -3493,7 +3495,7 @@ function analisarPlanilhaCampo(wb, arquivo, opc = {}) {
         res.naoEncontrados.push(`${f.nome}: ${tipo === 'ext' ? i.tag + ' — ' + i.localizacao : 'TAG ' + i.tag + ' — ' + i.local}`);
         // item fora do inventário: prepara a inclusão (com a inspeção) caso o usuário confirme
         const novo = tipo === 'ext'
-          ? { tipo: 'ext', tag: i.tag, localizacao: i.localizacao, tipoCap: i.tipoCap || '', fab: i.fab || '', recarga: i.recarga || '', teste: i.teste || '', geral: f.unidade || '', area: f.areaCab || '', local: f.areaCab || '', aba: f.nome }
+          ? { tipo: 'ext', tag: i.tag, localizacao: i.localizacao, tipoCap: i.tipoCap || '', fab: i.fab || '', recarga: i.recarga || '', teste: i.teste || '', geral: f.unidade || '', unidade: f.unidade || '', area: f.areaCab || '', local: f.areaCab || '', aba: f.nome }
           : { tipo: 'hid', tag: i.tag, area: i.area || '', local: i.local || '', geral: f.unidade || '', teste1: i.teste1 || '', teste2: i.teste2 || '', qtdMang: [i.teste1, i.teste2].filter(Boolean).length || '', aba: f.nome };
         const idNovo = tipo === 'ext' ? 'e_' + idNovoExt(i.tag) + '_' + hashKey(norm(i.localizacao)) : 'h_' + hashKey(i.tag + '|' + norm(i.local));
         if (!res.novos[idNovo]) res.novos[idNovo] = { ...novo, _folha: f.nome };
