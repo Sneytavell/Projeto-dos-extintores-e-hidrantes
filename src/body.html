@@ -1118,7 +1118,7 @@ function renderResultados() {
   const nV = l.filter(i => i._status === 'Vencido').length, nF = l.filter(feitoMes).length;
   const selK = selecionado ? chaveItem(selecionado) : null;
   el.innerHTML = mostra.map(i => {
-    const t = modoInsp === 'ext' ? (grade ? esc(i.tag) : `${esc(i.tag)} · Nº ${esc(i.n)}`) : `TAG ${esc(i.tag)}`;
+    const t = modoInsp === 'ext' ? (grade ? esc(i.tag) : esc(i.tag)) : `TAG ${esc(i.tag)}`;
     const s = modoInsp === 'ext' ? (grade ? esc(i.tipo) : `${esc(i.tipo)} · ${esc(i.local)}`) : (grade ? esc(i.local) : `${esc(i.area)} · ${esc(i.local)}`);
     const mi = mensalItem(kMes(i)), fe = feitoMes(i);
     const tags = [i._status === 'Vencido' ? '<i class="tg tg-v">✕ Vencido</i>' : i._status === 'Atenção' ? '<i class="tg tg-a">! Atenção</i>' : '', fe ? '<i class="tg tg-ok">✓ Mês</i>' : mi.st === 'Vencida' ? '<i class="tg tg-iv">⏰ Inspeção</i>' : ''].filter(Boolean).join('');
@@ -1196,7 +1196,7 @@ async function salvarInspecao(btn, aviso, montarReg, posSalvar) {
 function formExt(el, it) {
   const co2 = /^co2/i.test(it.tipo || '');
   el.innerHTML = `<div class="item-card">
-    <div class="item-head"><div><div class="muted">Extintor · Nº ${esc(it.n)}${it._grupo ? ' · Grupo ' + esc(it._grupo) : ''}</div><h2 class="num">${esc(it.tag)} · ${esc(it.tipo)}</h2></div><div style="display:flex;gap:8px;align-items:center"><span title="${esc(tipEx(it))}">${badge(it._status)}</span></div></div>
+    <div class="item-head"><div><div class="muted">Extintor${it._grupo ? ' · Grupo ' + esc(it._grupo) : ''}</div><h2 class="num">${esc(it.tag)} · ${esc(it.tipo)}</h2></div><div style="display:flex;gap:8px;align-items:center"><span title="${esc(tipEx(it))}">${badge(it._status)}</span></div></div>
     <dl class="facts" style="margin:0"><div><dt>Localização</dt><dd>${esc(it.localizacao)}</dd></div><div><dt>Local</dt><dd>${esc(it.local)}</dd></div><div><dt>Área</dt><dd>${esc(it.area)}</dd></div><div><dt>Nº Fabricação</dt><dd class="num">${esc(it.fab)}</dd></div><div><dt>Última recarga</dt><dd class="num">${fmtM(it.recarga)}</dd></div><div><dt>Último teste hidrostático</dt><dd class="num">${fmtM(it.teste)}</dd></div></dl>
     <hr class="divider">
     <div class="check-group"><h3>Itens gerais <small>13 itens</small></h3>${legenda}${checklist('g:', ITENS_EXT)}</div>
@@ -1297,7 +1297,7 @@ function modalAlteracao(titulo, corpo, motivoPadrao, aoSalvar) {
 }
 function abrirEdicaoExt(it) {
   const tipos = distintos(ALL_EXT, i => i.tipo);
-  const bg = modalAlteracao(`Alterar dados · extintor ${esc(it.tag)}`, `<p class="muted" style="margin:0">Nº ${esc(it.n)} · ${esc(it.local)} · ${esc(it.localizacao)}</p>
+  const bg = modalAlteracao(`Alterar dados · extintor ${esc(it.tag)}`, `<p class="muted" style="margin:0">${esc(it.local)} · ${esc(it.localizacao)}</p>
     <div class="form-row"><div class="field"><label for="al-fab">Nº de fabricação</label><input id="al-fab" type="text"></div>
       <div class="field"><label for="al-tipo">Tipo / capacidade</label><input id="al-tipo" type="text" list="al-tipos"><datalist id="al-tipos">${tipos.map(t => `<option value="${esc(t)}">`).join('')}</datalist></div></div>
     <div class="form-row"><div class="field"><label for="al-rec">Última recarga</label><input id="al-rec" type="date"></div><div class="field"><label for="al-tst">Último teste hidrostático</label><input id="al-tst" type="date"></div></div>${blocoRetirar(it)}`,
@@ -1967,7 +1967,7 @@ function validadeBI() {
     const r = vencRecarga(it.recarga), t = vencTesteExt(it.teste);
     const due = r && t ? (r <= t ? r : t) : (r || t);
     const dias = due ? diasAte(due) : null;
-    rows.push({ equip: 'Extintor', nome: `${it.tag} · Nº ${it.n}`, tipo: it.tipo, fab: it.fab && !/^n\/?s$/i.test(it.fab) ? it.fab : '', unidade: unidadeExt(it), local: it.local, divisao: it.geral, motivo: due && r && due.getTime() === r.getTime() ? 'Recarga' : 'Teste hidrostático', venc: due ? isoDe(due) : '', dias, status: statusPorDias(dias) });
+    rows.push({ equip: 'Extintor', nome: String(it.tag), tipo: it.tipo, fab: it.fab && !/^n\/?s$/i.test(it.fab) ? it.fab : '', unidade: unidadeExt(it), local: it.local, divisao: it.geral, motivo: due && r && due.getTime() === r.getTime() ? 'Recarga' : 'Teste hidrostático', venc: due ? isoDe(due) : '', dias, status: statusPorDias(dias) });
   });
   HID.forEach(it => {
     for (let k = 1; k <= Math.min(2, +it.qtdMang || 0); k++) {
