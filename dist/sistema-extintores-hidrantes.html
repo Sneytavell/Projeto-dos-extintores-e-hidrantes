@@ -407,6 +407,14 @@ td.nowrap{white-space:nowrap}
     <div id="gate-msg" class="muted">Verificando seu acesso…</div>
     <div id="login-box" hidden style="display:flex;flex-direction:column;gap:14px">
       <div><h2 style="font-size:16px;margin:0">Entrar</h2><div class="muted" style="font-size:13px">Use sua matrícula e o PIN definido pelo administrador.</div></div>
+      <div id="lg-setup" hidden style="border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px">
+        <strong>Primeira configuração</strong><span class="muted" style="font-size:13px">Ainda não há administrador. Crie o seu acesso de administrador (matrícula + PIN).</span>
+        <div class="field"><label for="su-nome">Nome</label><input id="su-nome" type="text"></div>
+        <div class="field"><label for="su-mat">Matrícula</label><input id="su-mat" type="text" inputmode="numeric"></div>
+        <div class="field"><label for="su-pin">PIN (4 a 8 dígitos)</label><input id="su-pin" type="password" inputmode="numeric" maxlength="8"></div>
+        <div class="lg-erro" id="su-erro" role="alert"></div>
+        <button class="btn primary" type="button" id="su-ok">Criar administrador e entrar</button>
+      </div>
       <form id="login-form" autocomplete="off" style="display:flex;flex-direction:column;gap:12px">
         <div class="field"><label for="lg-mat">Matrícula</label><input id="lg-mat" type="text" inputmode="numeric" autocomplete="username"></div>
         <div class="field"><label for="lg-pin">PIN</label><input id="lg-pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8"></div>
@@ -455,6 +463,7 @@ td.nowrap{white-space:nowrap}
     <div class="user">
       <button id="btn-importar" class="btn small" type="button" title="Reimportar planilha de inventário (.xlsx)">Atualizar dados</button>
       <div class="user-id"><img class="avatar" id="user-avatar" alt=""><span class="user-txt"><span class="nome" id="user-nome"></span><span class="papel" id="user-papel"></span></span></div>
+      <button id="btn-backup" class="btn small" type="button" hidden title="Trazer os dados do sistema antigo (arquivo .json)">Importar backup</button><input id="file-backup" type="file" accept=".json" hidden>
       <button id="btn-compart" class="btn small" type="button" hidden title="Neste aparelho, todos entram só com matrícula e PIN">Aparelho compartilhado</button>
       <button id="btn-sair" class="btn small" type="button" title="Sair e voltar à tela de login">Sair</button>
     </div>
@@ -1049,6 +1058,7 @@ function aplicarPapel() {
   if (!pode.verIndicadores() && !$('#area-bi').hidden) irPara('painel');
   $('#nav-acessos').hidden = !pode.verCadastro() || S.modo === 'local';
   $('#btn-importar').hidden = !pode.inventario();
+  if ($('#btn-backup')) $('#btn-backup').hidden = !(S.firebase && pode.administrar());
   if ($('#btn-compart')) { $('#btn-compart').hidden = S.modo !== 'nuvem' || !pode.administrar(); $('#btn-compart').textContent = 'Aparelho compartilhado: ' + (aparelhoCompartilhado() ? 'ligado' : 'desligado'); }
   $('#imp-bar').hidden = !pode.importarCampo();
   const somente = S.modo === 'nuvem' && pode.inspecionar() && EU.podeGravar === false;
@@ -1527,7 +1537,7 @@ async function abrirPessoa(id, base, aoSalvar) {
     </div>
     <div class="field"><label>Áreas (grupos de inspeção)</label><span class="bi-note">Defina na aba <strong>Equipes e áreas</strong>: pela equipe da pessoa ou só para ela.${id ? ' Hoje: ' + (gruposDaPessoa(id).todos.join(', ') || 'nenhuma — vê todas') + '.' : ''}</span></div>
     <div class="field"><label for="pm-papel">Perfil de acesso</label><select id="pm-papel">${perfisIds().map(x => `<option value="${esc(x)}"${x === p.papel ? ' selected' : ''}>${esc(nomePerfil(x))}</option>`).join('')}</select><span class="bi-note" id="pm-papel-desc"></span></div>
-    <div class="field"><label for="pm-conta">Conta no sistema</label>
+    <div class="field"${S.user ? '' : ' hidden'}><label for="pm-conta">Conta no sistema</label>
       <div id="pm-conta-atual" class="pm-conta"></div>
       <input id="pm-conta" type="text" placeholder="Buscar a conta Claude da pessoa pelo nome ou e-mail…" autocomplete="off">
       <div class="search-hits" id="pm-hits" hidden></div>
@@ -1659,7 +1669,31 @@ $('#file-import').addEventListener('change', async e => {
 });
 
 /* ---------- início ---------- */
+/* ---------- banco Firebase (site publicado fora do Claude, ex.: Vercel) ---------- */
+function fsAdapter(fs) {
+  const snapDoc = s => ({ id: s.id, exists: s.exists, data: () => s.data() });
+  const wrapDoc = ref => ({ path: ref.path, get: async () => snapDoc(await ref.get()), set: d => ref.set(d), update: d => ref.set(d, { merge: true }), delete: () => ref.delete(), onSnapshot: (cb, err) => ref.onSnapshot(s => cb(snapDoc(s)), err) });
+  const wrapCol = ref => ({ doc: id => wrapDoc(ref.doc(id)), get: async () => ({ docs: (await ref.get()).docs.map(snapDoc) }), onSnapshot: (cb, err) => ref.onSnapshot(s => cb({ docs: s.docs.map(snapDoc) }), err) });
+  return { collection: p => wrapCol(fs.collection(p)), doc: p => wrapDoc(fs.doc(p)) };
+}
+const USA_FIREBASE = !window.claude?.use && !!window.FIREBASE_CONFIG && !!window.firebase;
+async function iniciarFirebase() {
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+  await firebase.auth().signInAnonymously();
+  return { db: fsAdapter(firebase.firestore()), uid: firebase.auth().currentUser.uid };
+}
 async function iniciar() {
+  if (USA_FIREBASE && !SNAP) {
+    try {
+      const fb = await iniciarFirebase();
+      S.modo = 'nuvem'; S.db = fb.db; S.user = null; S.uid = fb.uid; S.firebase = true;
+      EU = { id: fb.uid, nome: 'Usuário', nomeConta: 'Usuário', avatar: '', dono: false, editor: false, podeGravar: true, papel: 'visualizador' };
+    } catch (e) {
+      console.warn(e);
+      $('#gate-msg').innerHTML = '<strong>Não foi possível conectar ao banco (Firebase).</strong><br>Verifique a internet e a configuração em firebase-config.js (Autenticação anônima ativada e regras do Firestore publicadas).';
+      return;
+    }
+  }
   const user = window.claude?.use ? await window.claude.use('user') : null;
   const db = window.claude?.use ? await window.claude.use('db') : null;
   const uid = user ? await user.id() : null;
@@ -1668,7 +1702,7 @@ async function iniciar() {
     $('#gate-msg').innerHTML = '<strong>Não foi possível conectar ao banco do sistema.</strong><br>Entre na sua conta Claude e abra o sistema pelo link compartilhado. Se já estiver conectado, peça ao responsável para compartilhar a página com você e recarregue.';
     return;
   }
-  if (db && user && uid) {
+  if (!S.firebase && db && user && uid) {
     S.modo = 'nuvem'; S.db = db; S.user = user; S.uid = uid;
     const me = await user.me();
     EU = { id: uid, nome: me.name || 'Você', nomeConta: me.name || 'Você', avatar: me.avatarUrl, dono: me.isOwner, editor: me.canEdit, podeGravar: await user.can('data.write'), papel: 'visualizador' };
@@ -1677,6 +1711,7 @@ async function iniciar() {
   $('#user-nome').textContent = EU.nome;
   if (EU.avatar) $('#user-avatar').src = EU.avatar; else $('#user-avatar').hidden = true;
   $('#banner-local').hidden = S.modo !== 'local' || !!SNAP;
+  if (S.modo === 'local' && !window.claude?.use && 'FIREBASE_CONFIG' in window && !window.FIREBASE_CONFIG) $('#banner-local').innerHTML = '<strong>Banco ainda não configurado.</strong> Preencha o arquivo firebase-config.js com os dados do seu projeto Firebase e publique de novo. Até lá, o que for feito aqui fica só neste navegador.';
   if (SNAP) { $('#banner-snap').hidden = false; $('#banner-snap-txt').textContent = `Dados de ${quando(SNAP.em)}${SNAP.por ? ' (gerada por ' + SNAP.por + ')' : ''}. Esta cópia é só para consulta: o que for alterado aqui não vai para o sistema. Para ver os dados mais recentes e lançar inspeções, abra o link do sistema.`; }
 
   try {
@@ -1741,12 +1776,33 @@ function entrarApp() {
   renderTudo(); renderBI(); renderCronograma();
 }
 let LG_FALHAS = 0, LG_BLOQ = 0, SOLIC = {};
+document.getElementById('su-ok').addEventListener('click', async () => {
+  const nome = $('#su-nome').value.trim(), mat = $('#su-mat').value.trim(), pin = $('#su-pin').value.trim(), err = $('#su-erro');
+  if (!nome || !mat) { err.textContent = 'Informe nome e matrícula.'; return; }
+  if (!/^\d{4,8}$/.test(pin)) { err.textContent = 'O PIN deve ter de 4 a 8 dígitos.'; return; }
+  if (Object.values(PESSOAS).some(p => p.papel === 'admin' && p.pinHash)) { err.textContent = 'Já existe um administrador. Entre com matrícula e PIN.'; return; }
+  const b = $('#su-ok'); b.disabled = true;
+  try { const sal = novoSal(); const id = await S.salvarPessoa(null, { nome, matricula: mat, funcao: 'Administrador', turno: '', equipe: '', grupos: [], papel: 'admin', uid: null, ativo: true, pinSalt: sal, pinHash: await hashPin(pin, sal), criadoEm: new Date().toISOString(), atualizadoEm: new Date().toISOString(), por: 'configuracao-inicial' }); login({ pessoaId: id }); }
+  catch (e) { err.textContent = 'Não foi possível salvar. Verifique as regras do Firestore.'; b.disabled = false; }
+});
 /* aparelho compartilhado (tablet/computador da brigada): só matrícula + PIN e saída automática */
 const CHAVE_COMP = 'exh-aparelho-compartilhado';
 function aparelhoCompartilhado() { try { return localStorage.getItem(CHAVE_COMP) === '1'; } catch (e) { return false; } }
 let ULT_ATIV = Date.now();
 ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(ev => window.addEventListener(ev, () => { ULT_ATIV = Date.now(); }, { passive: true, capture: true }));
 setInterval(() => { if (APP_ABERTO && SESSAO && aparelhoCompartilhado() && Date.now() - ULT_ATIV <= 15 * 60000) { SESSAO.ult = ULT_ATIV; gravarSessao(SESSAO); } if (APP_ABERTO && SESSAO && aparelhoCompartilhado() && Date.now() - ULT_ATIV > 15 * 60000) sair('Saída automática: 15 minutos sem uso. Entre de novo com sua matrícula e PIN.'); }, 30000);
+document.getElementById('btn-backup').addEventListener('click', () => $('#file-backup').click());
+document.getElementById('file-backup').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const bk = JSON.parse(await f.text()); const cols = bk.colecoes || bk;
+    const lista = Object.entries(cols).flatMap(([c, docs]) => Object.entries(docs || {}).map(([id, d]) => [c, id, d]));
+    if (!lista.length) { toast('Backup vazio.'); return; }
+    const b = $('#btn-backup'); b.disabled = true; let n = 0;
+    for (const [c, id, d] of lista) { await S.db.doc(c + '/' + id).set(d); if (++n % 25 === 0) b.textContent = `Importando… ${n}/${lista.length}`; }
+    b.textContent = 'Importar backup'; b.disabled = false; toast(`Backup importado: ${nBR(n)} registros. Recarregue a página.`);
+  } catch (x) { toast('Não foi possível importar: ' + (x.message || x)); $('#btn-backup').disabled = false; $('#btn-backup').textContent = 'Importar backup'; }
+});
 document.getElementById('btn-compart').addEventListener('click', () => {
   const b = $('#btn-compart'), lig = aparelhoCompartilhado();
   if (!lig) {
@@ -1834,6 +1890,8 @@ function mostrarLogin(msg) {
     if (avatar) b.querySelector('img').src = avatar;
     b.querySelector('strong').textContent = txt; b.querySelector('.muted').textContent = sub; b.onclick = fn; r.appendChild(b);
   };
+  const semAdmin = S.firebase && !Object.values(PESSOAS).some(p => p.ativo !== false && p.papel === 'admin' && p.pinHash);
+  $('#lg-setup').hidden = !semAdmin;
   const comp = aparelhoCompartilhado();
   $('#lg-comp').hidden = !comp;
   const minha = comp ? null : Object.entries(PESSOAS).find(([, p]) => p.uid && p.uid === EU.id && p.ativo !== false);
@@ -2892,7 +2950,7 @@ async function gerarCopiaOffline() {
 async function baixarArquivo(nome, blob) {
   const dl = window.claude?.use ? await window.claude.use('downloads') : null;
   if (dl) { try { await dl.save({ filename: nome, data: blob }); toast('Arquivo salvo.'); } catch (e) { if (e?.code !== 'declined') toast(e?.code === 'rate_limited' ? 'Aguarde a janela anterior e tente de novo.' : 'Não foi possível baixar aqui.'); } return; }
-  if (S.modo === 'local') { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); return; }
+  if (S.modo === 'local' || !window.claude?.use) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); return; }
   toast('Download indisponível nesta visualização.');
 }
 function abrirGerarPlanilhas() {

@@ -1,0 +1,10 @@
+rules_version = '2';
+// Regras do banco do site. Só quem abre o site (login anônimo automático) lê e grava.
+// O controle de quem pode fazer o quê fica no login por matrícula + PIN do próprio sistema.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

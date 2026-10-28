@@ -292,3 +292,10 @@ Nova aba "Cronograma" (todos veem; só admin cria/atribui):
 - Ligado: tela de login só com matrícula + PIN, Primeiro acesso e Visitante (some "Continuar como" e "Entrar como administrador"); aviso explicando o uso; saída automática após 15 min sem uso (também ao recarregar depois de 15 min parado).
 - Uso: tablet/computador da brigada com uma conta Claude conectada e o link aberto; cada pessoa entra com matrícula/PIN e clica Sair.
 - (v42) Inspeções por mês: coluna Nº fabricação (extintor; hidrante mostra o das mangueiras, se cadastrado), também na busca e no CSV.
+
+## Etapa 40 — Publicação na Vercel com banco Firebase (v43)
+- `dist/index.html` (Vercel) carrega o Firebase (app/auth/firestore compat 10.12.2) e `firebase-config.js`; `dist/sistema-extintores-hidrantes.html` continua sendo a versão do Artifact no Claude.
+- Fora do Claude, com `FIREBASE_CONFIG` preenchido: login anônimo no Firebase + entrada por matrícula e PIN (sem conta Claude). Sem configuração: aviso "Banco ainda não configurado".
+- Primeira configuração: se não existe administrador com PIN, a tela de login pede para criar o primeiro administrador.
+- "Importar backup" (só Administrador, no Firebase): traz o arquivo .json exportado do banco do Artifact (inspeções, ajustes, meses, planos, entregas, novos, pessoas).
+- Regras do Firestore em `firestore.rules` (leitura/gravação para quem abriu o site; o controle de acesso é pela matrícula/PIN).
