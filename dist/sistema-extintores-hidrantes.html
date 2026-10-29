@@ -329,6 +329,10 @@ td.nowrap{white-space:nowrap}
 .ac-bar .vl{font-weight:700;font-variant-numeric:tabular-nums}.ac-bar .vl small{font-weight:400;color:var(--muted)}
 
 .ac-lk{background:none;border:0;padding:0;font:inherit;color:var(--accent);cursor:pointer;text-align:left;text-decoration:underline dotted;text-underline-offset:3px}.ac-lk:hover{text-decoration:underline}
+.iv-bars{display:flex;flex-direction:column;gap:4px;max-height:380px;overflow:auto}.iv-bars .ac-bar{grid-template-columns:minmax(110px,40%) minmax(0,1fr) auto}
+.iv-tr{display:flex}.iv-tr span{height:100%}
+#iv-feed .ac-ev{grid-template-columns:70px minmax(0,1fr)}
+#iv-tb td:nth-child(8),#iv-tb td:nth-child(9){min-width:130px}#iv-tb td:nth-child(12){min-width:200px}
 tr.ac-row-nc td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
 #ac-tb td:nth-child(4),#ac-tb td:nth-child(5),#ac-tb td:nth-child(6){min-width:130px}#ac-tb td:nth-child(9){min-width:200px}#ac-tb td:nth-child(11){min-width:180px}
 .bp-dia{margin-top:10px;font-size:14px}.bp-dia summary{cursor:pointer;color:var(--accent);font-weight:600}
@@ -535,6 +539,7 @@ tr.ac-row-nc td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
     <nav class="mainnav">
       <button id="nav-painel" class="ativo" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel de status</span></button>
       <button id="nav-inspecao" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg><span>Nova inspeção</span></button>
+      <button id="nav-invent" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M12 3v3M8 9a4 4 0 0 1 8 0v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/><path d="M8 14h8"/></svg><span>Inventário</span></button>
       <button id="nav-acomp" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Acompanhamento</span></button>
       <button id="nav-cronograma" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Cronograma</span></button>
       <button id="nav-bi" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Indicadores</span></button>
@@ -644,6 +649,40 @@ tr.ac-row-nc td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
 
 
     <!-- CRONOGRAMA -->
+    <section id="area-invent" class="kpi-group" style="gap:16px" hidden>
+      <div class="section-title"><h2>Situação do inventário</h2>
+        <div class="cr-acoes"><span class="ac-vivo on" id="iv-vivo"><i></i><span>ao vivo</span></span></div></div>
+      <nav class="subtabs bp-grupos" id="iv-st"><button type="button" data-s="" class="ativo">Todos</button><button type="button" data-s="Vencido">Vencidos</button><button type="button" data-s="Atenção">Vencem em até 10 dias</button><button type="button" data-s="Regular">Liberados</button><button type="button" data-s="Sem teste">Sem data</button><button type="button" data-s="Retirado">Retirados do controle</button></nav>
+      <div class="toolbar">
+        <div class="field wide"><label for="iv-q">Buscar</label><input id="iv-q" type="text" placeholder="Item, nº fabricação, local, tipo…"></div>
+        <div class="field"><label for="iv-eq">Equipamento</label><select id="iv-eq"><option value="">Tudo</option><option value="ext">Extintores</option><option value="hid">Hidrantes</option></select></div>
+        <div class="field"><label for="iv-tipo">Tipo</label><select id="iv-tipo"></select></div>
+        <div class="field"><label for="iv-grupo">Grupo</label><select id="iv-grupo"></select></div>
+        <div class="field"><label for="iv-geral">Geral</label><select id="iv-geral"></select></div>
+        <div class="field"><label for="iv-area">Área</label><select id="iv-area"></select></div>
+        <div class="field"><label for="iv-loc">Locação</label><select id="iv-loc"></select></div>
+        <div class="field"><label for="iv-local">Local</label><select id="iv-local"></select></div>
+        <div class="field"><label for="iv-men">Inspeção mensal</label><select id="iv-men"><option value="">Todas</option><option>Em dia</option><option>Vence em breve</option><option>Vencida</option><option>Sem registro</option></select></div>
+        <div class="field"><label for="iv-mot">Motivo do vencimento</label><select id="iv-mot"><option value="">Todos</option><option value="Recarga">Recarga</option><option value="Teste hidrostático">Teste hidrostático</option></select></div>
+      </div>
+      <p class="bi-take" id="iv-take"></p>
+      <div class="kpis" id="iv-kpis" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))"></div>
+      <div class="ac-duo">
+        <div class="panel bi-card"><h2 class="bi-h">Situação por lugar</h2><nav class="subtabs bp-grupos" id="iv-onde"><button type="button" data-o="local" class="ativo">Por local</button><button type="button" data-o="area">Por área</button><button type="button" data-o="areaPl">Por área da planilha</button><button type="button" data-o="geral">Por geral</button></nav>
+          <div class="bi-legend"><span><i style="background:var(--crit)"></i>Vencido</span><span><i style="background:var(--warn)"></i>Até 10 dias</span><span><i style="background:var(--good)"></i>Liberado</span><span><i style="background:var(--border)"></i>Sem data</span></div>
+          <p class="bi-note">Toque numa linha para filtrar.</p><div id="iv-lugares" class="iv-bars"></div></div>
+        <div class="panel bi-card"><h2 class="bi-h">Próximos vencimentos</h2><p class="bi-note">Vencidos há mais tempo primeiro, depois os que vencem logo. Atualiza sozinho quando alguém altera o cadastro.</p><div class="ac-feed" id="iv-feed" style="max-height:380px"></div></div>
+      </div>
+      <div class="ac-duo">
+        <div class="panel bi-card"><h2 class="bi-h">Por tipo</h2><p class="bi-note">Quantidade de cada tipo e a situação (toque para filtrar).</p><div id="iv-tipos" class="iv-bars"></div></div>
+        <div class="panel bi-card"><h2 class="bi-h">Vencimentos por mês</h2><p class="bi-note">Recarga, teste e mangueiras que vencem em cada mês (próximos 12 meses; vencidos em vermelho).</p><div class="bi-chart" id="iv-ch-mes"></div></div>
+      </div>
+      <div class="panel bi-card">
+        <div class="section-title"><h2 class="bi-h">Equipamentos</h2><button class="btn small" type="button" id="iv-csv">Copiar CSV</button></div>
+        <div class="table-wrap bi-scroll" style="max-height:60vh;overflow:auto"><table><thead><tr><th>Item</th><th>Tipo</th><th>Situação</th><th>Vence</th><th>Recarga</th><th>Teste</th><th>Inspeção mensal</th><th>Geral</th><th>Área</th><th>Área da planilha</th><th>Locação</th><th>Local / localização</th><th>Grupo</th></tr></thead><tbody id="iv-tb"></tbody></table></div>
+        <div class="muted" id="iv-cont" style="font-size:13px"></div>
+      </div>
+    </section>
     <section id="area-acomp" class="kpi-group" style="gap:16px" hidden>
       <div class="section-title"><h2>Acompanhamento das inspeções</h2>
         <div class="cr-acoes"><span class="ac-vivo" id="ac-vivo"><i></i><span>ao vivo</span></span><div class="cr-mesnav"><button class="btn small" type="button" id="ac-ant" aria-label="Mês anterior">‹</button><strong id="ac-mes"></strong><button class="btn small" type="button" id="ac-prox" aria-label="Próximo mês">›</button></div></div></div>
@@ -1219,12 +1258,13 @@ function aplicarPapel() {
 
 /* ---------- navegação ---------- */
 function irPara(area) {
-  ['painel', 'inspecao', 'acomp', 'cronograma', 'bi', 'acessos'].forEach(a => { $('#nav-' + a).classList.toggle('ativo', a === area); $('#area-' + a).hidden = a !== area; });
+  ['painel', 'inspecao', 'invent', 'acomp', 'cronograma', 'bi', 'acessos'].forEach(a => { $('#nav-' + a).classList.toggle('ativo', a === area); $('#area-' + a).hidden = a !== area; });
   if (area === 'inspecao') renderFinder();
   if (area === 'acessos') renderAcessos();
   if (area === 'bi') renderBI();
   if (area === 'cronograma') renderCronograma();
   if (area === 'acomp') abrirAcomp();
+  if (area === 'invent') abrirInv();
   if (area === 'painel') renderTudo();
 }
 $('#nav-painel').onclick = () => irPara('painel');
@@ -1233,6 +1273,7 @@ $('#nav-acessos').onclick = () => irPara('acessos');
 $('#nav-bi').onclick = () => irPara('bi');
 $('#nav-cronograma').onclick = () => irPara('cronograma');
 $('#nav-acomp').onclick = () => irPara('acomp');
+$('#nav-invent').onclick = () => irPara('invent');
 function abaPainel(t) {
   document.querySelectorAll('#subtabs-painel button').forEach(b => b.classList.toggle('ativo', b.dataset.tab === t));
   ['geral', 'ext', 'hid', 'hist'].forEach(x => $('#tab-' + x).hidden = x !== t);
@@ -1375,7 +1416,7 @@ function renderFiltros() {
   opts($('#ext-tipo'), distintos(EXT, i => i.tipo), 'Todos'); opts($('#ext-status'), [...STATUS, 'Retirado do controle'], 'Todos');
   opts($('#hid-status'), [...STATUS, 'Retirado do controle'], 'Todos');
 }
-function renderTudo() { renderFiltros(); renderGeral(); renderExtTabela(); renderHidTabela(); }
+function renderTudo() { renderFiltros(); renderGeral(); renderExtTabela(); renderHidTabela(); try { if (typeof renderInv === 'function') renderInv(); } catch (e) { console.warn(e); } }
 
 /* ---------- nova inspeção ---------- */
 const ITENS_EXT = ['Usado/Não comunicado', 'Não encontrado', 'Local não acessado', 'Obstrução', 'Suporte', 'Etiqueta substituída', 'Sinalização vertical', 'Sinalização horizontal', 'Selo do INMETRO', 'Rótulo', 'Lacre', 'Mangote', 'Pressurização'];
@@ -3567,6 +3608,95 @@ async function abrirAcomp() {
   if (!window.d3 && !biD3Falhou) { try { await carregarD3(); } catch (e) { biD3Falhou = true; } }
   renderAcomp();
 }
+/* --- situação do inventário (mesmos controles do acompanhamento) --- */
+const IV = { st: '', onde: 'local', localSel: null };
+function linhasInv() {
+  const ar = areasVisiveis(), okG = g => !ar || ar.grupos.includes(g), out = [];
+  const ext = [...EXT, ...RET_EXT], hid = [...HID, ...RET_HID];
+  ext.forEach(it => { if (!okG(it._grupo)) return;
+    const r = vencRecarga(it.recarga), t = vencTesteExt(it.teste), due = r && t ? (r <= t ? r : t) : (r || t);
+    const men = mensalItem('e_' + it.n);
+    out.push({ t: 'ext', it, item: it.tag, tipo: tipoPadrao(it.tipo), fab: it.fab && !/^n\/?s$/i.test(it.fab) ? it.fab : '', st: it._retirado ? 'Retirado' : it._status, venc: due ? isoDe(due) : '', dias: due ? diasAte(due) : null,
+      motivo: due ? (r && due.getTime() === r.getTime() ? 'Recarga' : 'Teste hidrostático') : '', rec: it.recarga, recV: r ? isoDe(r) : '', tst: it.teste, tstV: t ? isoDe(t) : '', men,
+      geral: it.geral || '', area: it.area || '', areaPl: areaPlanilha(it), loc: it.cod || it.local || '', local: it.local || '', onde: it.localizacao || '', grupo: it._grupo || '' }); });
+  hid.forEach(it => { if (!okG(it._grupo)) return;
+    const ms = [1, 2].filter(k => k <= (+it.qtdMang || 0)).map(k => ({ k, v: vencMang(it['teste' + k]) })).filter(x => x.v), due = ms.length ? ms.reduce((a, b) => b.v < a.v ? b : a).v : null;
+    const men = mensalItem('h_' + it._key);
+    out.push({ t: 'hid', it, item: 'TAG ' + it.tag, tipo: 'Hidrante ' + (+it.qtdMang || 0) + ' mang.', fab: [it.fab1, it.fab2].filter(Boolean).join(' / '), st: it._retirado ? 'Retirado' : it._status, venc: due ? isoDe(due) : '', dias: due ? diasAte(due) : null,
+      motivo: due ? 'Teste hidrostático' : '', rec: '', recV: '', tst: [it.teste1, it.qtdMang >= 2 ? it.teste2 : ''].filter(Boolean).join(' / '), tstV: due ? isoDe(due) : '', men,
+      geral: it.geral || '', area: it.area || '', areaPl: '', loc: it.local || '', local: it.local || '', onde: it.area || '', grupo: it._grupo || '' }); });
+  return out;
+}
+const COR_ST = { 'Vencido': 'var(--crit)', 'Atenção': 'var(--warn)', 'Regular': 'var(--good)', 'Sem teste': 'var(--border)' };
+function renderInv() {
+  if ($('#area-invent').hidden) return;
+  const todas = linhasInv(), eq = $('#iv-eq').value, q = norm($('#iv-q').value), men = $('#iv-men').value, mot = $('#iv-mot').value;
+  $('#iv-st').querySelectorAll('button').forEach(b => b.classList.toggle('ativo', b.dataset.s === IV.st));
+  const base = todas.filter(l => (!eq || l.t === eq) && (IV.st === 'Retirado' ? l.st === 'Retirado' : l.st !== 'Retirado'));
+  const ord = a => [...new Set(a.filter(Boolean))].sort((x, y) => x.localeCompare(y, 'pt-BR', { numeric: true }));
+  const sT = $('#iv-tipo'), sG = $('#iv-grupo'), sGe = $('#iv-geral'), sA = $('#iv-area'), sL = $('#iv-loc'), sLo = $('#iv-local');
+  opts(sT, ord(base.map(l => l.tipo)), 'Todos'); opts(sG, ord(base.map(l => l.grupo)), 'Todos'); sG.querySelectorAll('option').forEach(o => { if (o.value) o.textContent = 'Grupo ' + o.value; });
+  const b1 = base.filter(l => !sG.value || l.grupo === sG.value); opts(sGe, ord(b1.map(l => l.geral)), 'Todos');
+  const b2 = b1.filter(l => !sGe.value || l.geral === sGe.value); opts(sA, ord(b2.map(l => l.area)), 'Todas');
+  const b3 = b2.filter(l => !sA.value || l.area === sA.value); opts(sL, ord(b3.map(l => l.loc)), 'Todas');
+  const b4 = b3.filter(l => !sL.value || l.loc === sL.value); opts(sLo, ord([...b4.map(l => l.local), IV.localSel || '']), 'Todos'); if (IV.localSel !== null) { sLo.value = IV.localSel; IV.localSel = null; }
+  const semSt = l => (!sT.value || l.tipo === sT.value) && (!sG.value || l.grupo === sG.value) && (!sGe.value || l.geral === sGe.value) && (!sA.value || l.area === sA.value) && (!sL.value || l.loc === sL.value) && (!sLo.value || l.local === sLo.value) && (!men || l.men.st === men) && (!mot || l.motivo === mot) && (!IV.areaPl || l.areaPl === IV.areaPl) &&
+    (!q || norm([l.item, l.tipo, l.fab, l.geral, l.area, l.areaPl, l.loc, l.local, l.onde, l.grupo].join(' ')).includes(q));
+  const U = base.filter(semSt), L = U.filter(l => !IV.st || IV.st === 'Retirado' || l.st === IV.st);
+  const c = s => U.filter(l => l.st === s).length, pc = (n, t) => t ? Math.round(n / t * 100) + '%' : '0%', tot = U.length;
+  const menV = U.filter(l => l.men.st === 'Vencida' || l.men.st === 'Sem registro').length;
+  $('#iv-kpis').innerHTML = IV.st === 'Retirado' ? kpiStatic([{ s: '', l: 'Retirados do controle', v: nBR(tot), sub: 'extintores e hidrantes fora do controle' }]) : kpiStatic([
+    { s: 'Azul', l: 'Equipamentos', v: nBR(tot), sub: `${nBR(U.filter(l => l.t === 'ext').length)} extintores · ${nBR(U.filter(l => l.t === 'hid').length)} hidrantes` },
+    { s: 'Vencido', l: 'Vencidos', v: nBR(c('Vencido')), sub: pc(c('Vencido'), tot) + ' do total' },
+    { s: 'Dez', l: 'Vencem em até 10 dias', v: nBR(c('Atenção')), sub: pc(c('Atenção'), tot) + ' do total' },
+    { s: 'Liberado', l: 'Liberados', v: nBR(c('Regular')), sub: pc(c('Regular'), tot) + ' do total' },
+    { s: '', l: 'Inspeção mensal pendente', v: nBR(menV), sub: 'vencida ou sem registro' }]);
+  const filtros = [sT.value, sG.value && 'Grupo ' + sG.value, sGe.value, sA.value, sL.value, sLo.value, IV.areaPl].filter(Boolean).join(' · ');
+  $('#iv-take').innerHTML = IV.st === 'Retirado' ? `<b>${nBR(tot)} equipamentos retirados do controle</b>${filtros ? ' em ' + esc(filtros) : ''}.` : tot ? `<b>${nBR(c('Vencido'))} vencidos</b> e ${nBR(c('Atenção'))} vencendo em até 10 dias, de ${nBR(tot)} equipamentos${filtros ? ' em <b>' + esc(filtros) + '</b>' : ''}. ${nBR(c('Regular'))} liberados (${pc(c('Regular'), tot)}).` : '<span class="muted">Nenhum equipamento com esses filtros.</span>';
+  // barras empilhadas por lugar e por tipo
+  const pilha = (el, campo, sel, onClick) => {
+    const g = {}; U.forEach(l => { const k = l[campo]; if (!k) return; const o = g[k] = g[k] || { k, n: 0, Vencido: 0, 'Atenção': 0, Regular: 0, 'Sem teste': 0, Retirado: 0 }; o.n++; o[l.st]++; });
+    const rows = Object.values(g).sort((a, b) => b.Vencido - a.Vencido || b.n - a.n), mx = Math.max(1, ...rows.map(r => r.n));
+    el.innerHTML = rows.length ? rows.map(r => `<button type="button" class="ac-bar${sel === r.k ? ' on' : ''}" data-k="${esc(r.k)}" title="${esc(r.k)}: ${r.Vencido} vencidos, ${r['Atenção']} até 10 dias, ${r.Regular} liberados, ${r['Sem teste']} sem data"><span class="nm">${esc(r.k)}</span><span class="tr iv-tr">${['Vencido', 'Atenção', 'Regular', 'Sem teste'].map(s => r[s] ? `<span style="width:${r[s] / mx * 100}%;background:${COR_ST[s]}"></span>` : '').join('')}</span><span class="vl">${r.Vencido ? '<span style="color:var(--crit)">' + nBR(r.Vencido) + '</span><small> / ' + nBR(r.n) + '</small>' : nBR(r.n)}</span></button>`).join('') : '<div class="bi-empty">Sem dados.</div>';
+    el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => onClick(b.dataset.k));
+  };
+  $('#iv-onde').querySelectorAll('button').forEach(b => b.classList.toggle('ativo', b.dataset.o === IV.onde));
+  const selO = { local: sLo.value, area: sA.value, areaPl: IV.areaPl || '', geral: sGe.value }[IV.onde];
+  pilha($('#iv-lugares'), IV.onde, selO, k => { if (IV.onde === 'local') IV.localSel = sLo.value === k ? '' : k; else if (IV.onde === 'area') sA.value = sA.value === k ? '' : k; else if (IV.onde === 'geral') sGe.value = sGe.value === k ? '' : k; else IV.areaPl = IV.areaPl === k ? '' : k; renderInv(); });
+  pilha($('#iv-tipos'), 'tipo', sT.value, k => { sT.value = sT.value === k ? '' : k; renderInv(); });
+  // próximos vencimentos
+  const prox = U.filter(l => l.venc && (l.st === 'Vencido' || l.st === 'Atenção' || l.dias <= 60)).sort((a, b) => a.dias - b.dias).slice(0, 40);
+  $('#iv-feed').innerHTML = prox.length ? prox.map(l => `<div class="ac-ev${l.st === 'Vencido' ? ' nc' : ''}"><span class="ac-quando">${fmtC(l.venc)}<small>${l.dias < 0 ? 'há ' + nBR(-l.dias) + 'd' : 'em ' + nBR(l.dias) + 'd'}</small></span><div><div><strong>${esc(l.item)}</strong> <span class="muted">· ${esc(l.tipo)} · ${esc(l.motivo)}</span> ${badge(l.st)}</div><div class="muted" style="font-size:12px"><button type="button" class="ac-lk" data-local="${esc(l.local)}">${esc(l.local || l.area)}</button>${l.onde && l.t === 'ext' ? ' · ' + esc(l.onde) : ''}${l.fab ? ' · Nº ' + esc(l.fab) : ''}</div></div></div>`).join('') : '<div class="bi-empty">Nenhum vencimento nos próximos 60 dias.</div>';
+  // tabela
+  const lista = L.slice().sort((a, b) => (a.dias ?? 1e9) - (b.dias ?? 1e9)), mostra = lista.slice(0, 500);
+  const cv = (iso, v) => iso ? `${fmtM(iso.split(' / ')[0])}${v ? '<div class="venc-sub ' + (statusData(dLocal(v)) === 'Vencido' ? 'v' : statusData(dLocal(v)) === 'Atenção' ? 'a' : '') + '">vence ' + fmt(v) + '</div>' : ''}` : '—';
+  $('#iv-tb').innerHTML = mostra.length ? mostra.map(l => `<tr><td class="nowrap"><strong>${esc(l.item)}</strong>${l.fab ? '<div class="muted" style="font-size:12px">Nº ' + esc(l.fab) + '</div>' : ''}</td><td class="nowrap">${esc(l.tipo)}</td><td>${l.st === 'Retirado' ? chip('sem', 'Retirado') + (l.it._retMotivo ? '<div class="muted" style="font-size:12px">' + esc(l.it._retMotivo) + '</div>' : '') : badge(l.st)}</td><td class="num nowrap">${l.venc ? fmt(l.venc) + '<div class="muted" style="font-size:12px">' + esc(l.motivo) + (l.dias != null ? ' · ' + (l.dias < 0 ? 'há ' + nBR(-l.dias) + 'd' : 'em ' + nBR(l.dias) + 'd') : '') + '</div>' : '—'}</td><td class="num nowrap">${l.t === 'ext' ? cv(l.rec, l.recV) : '—'}</td><td class="num nowrap">${l.t === 'ext' ? cv(l.tst, l.tstV) : (l.tst ? esc(l.tst.split(' / ').map(fmtM).join(' / ')) : '—')}</td><td class="nowrap">${l.men.ultima ? fmt(l.men.ultima) + '<div class="venc-sub ' + (l.men.st === 'Vencida' ? 'v' : l.men.st === 'Vence em breve' ? 'a' : '') + '">' + esc(l.men.st) + '</div>' : chip('sem', 'sem registro')}</td><td>${esc(l.geral)}</td><td>${esc(l.area)}</td><td class="nowrap">${esc(l.areaPl || '—')}</td><td class="nowrap">${esc(l.loc)}</td><td><button type="button" class="ac-lk" data-local="${esc(l.local)}">${esc(l.local)}</button>${l.t === 'ext' && l.onde ? '<div class="muted" style="font-size:12px">' + esc(l.onde) + '</div>' : ''}</td><td>${esc(l.grupo)}</td></tr>`).join('') : '<tr><td colspan="13"><div class="bi-empty">Nenhum equipamento com esses filtros.</div></td></tr>';
+  $('#iv-cont').textContent = lista.length > mostra.length ? `Mostrando os ${nBR(mostra.length)} mais urgentes de ${nBR(lista.length)}. Use os filtros ou copie o CSV para ver todos.` : `${nBR(lista.length)} equipamento(s).`;
+  IV.lista = lista;
+  desenharIvMes(U);
+}
+function desenharIvMes(U) {
+  const el = $('#iv-ch-mes'); if (!window.d3) { el.innerHTML = '<div class="bi-empty">Gráfico indisponível sem conexão.</div>'; return; }
+  const ym0 = ymAtual(), meses = Array.from({ length: 12 }, (_, i) => ymSoma(ym0, i));
+  const rows = [{ m: 'venc', lb: 'Vencidos', n: U.filter(l => l.st === 'Vencido').length }, ...meses.map(m => ({ m, lb: nomeMesYm(m).slice(0, 3) + '/' + m.slice(2, 4), n: U.filter(l => l.venc && l.venc.slice(0, 7) === m && l.st !== 'Vencido').length }))];
+  const W = el.clientWidth || 600, H = 240, mg = { t: 18, r: 8, b: 26, l: 36 };
+  const x = d3.scaleBand(rows.map(r => r.m), [mg.l, W - mg.r]).padding(.2), y = d3.scaleLinear([0, Math.max(1, ...rows.map(r => r.n))], [H - mg.b, mg.t]).nice();
+  const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
+  svg.append('g').selectAll('line').data(y.ticks(4)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', 'var(--border)');
+  svg.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', mg.l - 6).attr('y', d => y(d)).attr('dy', '.35em').attr('text-anchor', 'end').attr('font-size', 11).attr('fill', 'var(--muted)').text(d => nBR(d));
+  svg.append('g').selectAll('text').data(rows).join('text').attr('x', r => x(r.m) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('fill', 'var(--muted)').text(r => r.lb);
+  const g = svg.append('g').selectAll('g').data(rows).join('g');
+  g.append('rect').attr('x', r => x(r.m)).attr('width', x.bandwidth()).attr('y', r => y(r.n)).attr('height', r => y(0) - y(r.n)).attr('rx', 2).attr('fill', r => r.m === 'venc' ? 'var(--crit)' : 'var(--accent)');
+  g.filter(r => r.n > 0).append('text').attr('x', r => x(r.m) + x.bandwidth() / 2).attr('y', r => y(r.n) - 4).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 700).attr('fill', 'var(--text)').text(r => nBR(r.n));
+  el.replaceChildren(svg.node());
+}
+async function abrirInv() { if (!window.d3 && !biD3Falhou) { try { await carregarD3(); } catch (e) { biD3Falhou = true; } } renderInv(); }
+$('#iv-st').querySelectorAll('button').forEach(b => b.onclick = () => { IV.st = b.dataset.s; renderInv(); });
+$('#iv-onde').querySelectorAll('button').forEach(b => b.onclick = () => { IV.onde = b.dataset.o; renderInv(); });
+['iv-q', 'iv-eq', 'iv-tipo', 'iv-grupo', 'iv-geral', 'iv-area', 'iv-loc', 'iv-local', 'iv-men', 'iv-mot'].forEach(id => $('#' + id).addEventListener('input', () => renderInv()));
+['#iv-feed', '#iv-tb'].forEach(sel => $(sel).addEventListener('click', e => { const b = e.target.closest('.ac-lk'); if (!b) return; IV.localSel = b.dataset.local; IV.onde = 'local'; renderInv(); $('#area-invent').scrollIntoView({ behavior: 'smooth' }); }));
+$('#iv-csv').onclick = () => copiar([['Item', 'Equipamento', 'Tipo', 'Nº fabricação', 'Situação', 'Vence', 'Motivo', 'Dias', 'Última recarga', 'Último teste', 'Inspeção mensal', 'Geral', 'Área', 'Área da planilha', 'Locação', 'Local', 'Localização', 'Grupo'], ...(IV.lista || []).map(l => [l.item, l.t === 'ext' ? 'Extintor' : 'Hidrante', l.tipo, l.fab, l.st, fmt(l.venc), l.motivo, l.dias ?? '', l.rec ? fmtM(l.rec) : '', l.tst || '', l.men.ultima ? fmt(l.men.ultima) + ' (' + l.men.st + ')' : 'sem registro', l.geral, l.area, l.areaPl, l.loc, l.local, l.onde, l.grupo])].map(x => x.map(csvCell).join(';')).join('\n'));
+
 $('#ac-ant').onclick = () => { AC.ym = ymSoma(AC.ym || ymAtual(), -1); AC.dia = ''; renderAcomp(); };
 $('#ac-prox').onclick = () => { AC.ym = ymSoma(AC.ym || ymAtual(), 1); if (AC.ym > ymAtual()) AC.ym = ymAtual(); AC.dia = ''; renderAcomp(); };
 $('#ac-per').querySelectorAll('button').forEach(b => b.onclick = () => { AC.per = b.dataset.p; AC.dia = ''; renderAcomp(); });
