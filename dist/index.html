@@ -319,6 +319,22 @@ td.nowrap{white-space:nowrap}
 #tab-ext td:nth-child(2),#tab-ext td:nth-child(3),#tab-ext td:nth-child(4),#tab-hid td:nth-child(1),#tab-hid td:nth-child(2),#tab-hid td:nth-child(3){min-width:150px}
 .f-gal{display:grid;grid-template-columns:1fr;gap:12px}
 .cr-just{margin-top:4px;font-size:12.5px;border-left:3px solid var(--warn,#d29922);padding:2px 8px;line-height:1.4}
+.ac-duo{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px}@media (max-width:1100px){.ac-duo{grid-template-columns:1fr}}
+.ac-vivo{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:4px 10px}
+.ac-vivo i{width:8px;height:8px;border-radius:50%;background:var(--muted)}.ac-vivo.on i{background:#3fb950;box-shadow:0 0 0 3px rgba(63,185,80,.25);animation:acpulse 2s infinite}
+@keyframes acpulse{50%{box-shadow:0 0 0 6px rgba(63,185,80,0)}}
+.ac-feed{display:flex;flex-direction:column;max-height:300px;overflow:auto}
+.ac-ev{display:grid;grid-template-columns:54px minmax(0,1fr);gap:10px;padding:8px 4px;border-bottom:1px solid var(--border);border-left:3px solid transparent;font-size:13.5px}
+.ac-ev.nc{border-left-color:var(--crit)}.ac-quando{font-variant-numeric:tabular-nums;font-weight:600;font-size:13px;text-align:center;line-height:1.15}.ac-quando small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.ac-nctx{font-size:12px;color:var(--crit-text,var(--crit));margin-top:2px}
+.ac-bars{display:flex;flex-direction:column;gap:4px;max-height:340px;overflow:auto}
+.ac-bar{display:grid;grid-template-columns:minmax(110px,40%) minmax(0,1fr) auto;gap:10px;align-items:center;background:transparent;border:0;color:inherit;font:inherit;font-size:13px;padding:4px 6px;border-radius:6px;cursor:pointer;text-align:left}
+.ac-bar:hover{background:var(--bg-hover)}.ac-bar.on{background:var(--bg-hover);outline:1px solid var(--accent)}
+.ac-bar .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ac-bar .tr{position:relative;height:12px;border-radius:6px;background:var(--border);overflow:hidden}
+.ac-bar .bg{position:absolute;inset:0 auto 0 0;background:var(--bar-2);opacity:.35}.ac-bar .fl{position:absolute;inset:0 auto 0 0;background:var(--accent);z-index:1;border-radius:6px}
+.ac-bar .vl{font-weight:700;font-variant-numeric:tabular-nums}.ac-bar .vl small{font-weight:400;color:var(--muted)}
+tr.ac-row-nc td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
+#ac-tb td:nth-child(4),#ac-tb td:nth-child(5),#ac-tb td:nth-child(6){min-width:130px}#ac-tb td:nth-child(8){min-width:200px}#ac-tb td:nth-child(10){min-width:180px}
 .bp-dia{margin-top:10px;font-size:14px}.bp-dia summary{cursor:pointer;color:var(--accent);font-weight:600}
 .tgs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .tg{font-style:normal;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap;line-height:1.5}
@@ -523,6 +539,7 @@ td.nowrap{white-space:nowrap}
     <nav class="mainnav">
       <button id="nav-painel" class="ativo" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel de status</span></button>
       <button id="nav-inspecao" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg><span>Nova inspeção</span></button>
+      <button id="nav-acomp" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Acompanhamento</span></button>
       <button id="nav-cronograma" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Cronograma</span></button>
       <button id="nav-bi" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Indicadores</span></button>
       <button id="nav-acessos" type="button"><svg class="nv-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M22 20c0-2.7-1.6-4.8-4-5.6"/></svg><span>Pessoas</span></button>
@@ -631,6 +648,37 @@ td.nowrap{white-space:nowrap}
 
 
     <!-- CRONOGRAMA -->
+    <section id="area-acomp" class="kpi-group" style="gap:16px" hidden>
+      <div class="section-title"><h2>Acompanhamento das inspeções</h2>
+        <div class="cr-acoes"><span class="ac-vivo" id="ac-vivo"><i></i><span>ao vivo</span></span><div class="cr-mesnav"><button class="btn small" type="button" id="ac-ant" aria-label="Mês anterior">‹</button><strong id="ac-mes"></strong><button class="btn small" type="button" id="ac-prox" aria-label="Próximo mês">›</button></div></div></div>
+      <nav class="subtabs bp-grupos" id="ac-per"><button type="button" data-p="hoje">Hoje</button><button type="button" data-p="semana">Últimos 7 dias</button><button type="button" data-p="mes" class="ativo">Mês todo</button></nav>
+      <div class="toolbar">
+        <div class="field wide"><label for="ac-q">Buscar</label><input id="ac-q" type="text" placeholder="Item, inspetor, local, nº fabricação…"></div>
+        <div class="field"><label for="ac-eq">Equipamento</label><select id="ac-eq"><option value="">Tudo</option><option value="ext">Extintores</option><option value="hid">Hidrantes</option></select></div>
+        <div class="field"><label for="ac-insp">Inspetor</label><select id="ac-insp"></select></div>
+        <div class="field"><label for="ac-grupo">Grupo</label><select id="ac-grupo"></select></div>
+        <div class="field"><label for="ac-geral">Geral</label><select id="ac-geral"></select></div>
+        <div class="field"><label for="ac-area">Área</label><select id="ac-area"></select></div>
+        <div class="field"><label for="ac-loc">Locação / local</label><select id="ac-loc"></select></div>
+        <div class="field"><label for="ac-nc">Situação</label><select id="ac-nc"><option value="">Todas</option><option value="nc">Com não conformidade</option><option value="ok">Sem não conformidade</option></select></div>
+      </div>
+      <p class="bi-take" id="ac-take"></p>
+      <div class="kpis" id="ac-kpis" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"></div>
+      <div class="ac-duo">
+        <div class="panel bi-card"><h2 class="bi-h">Realizadas por dia</h2><p class="bi-note">Inspeções registradas em cada dia do período (toque numa barra para ver o dia).</p>
+          <div class="bi-legend"><span><i style="background:var(--accent)"></i>Extintores</span><span><i style="background:var(--bar-2)"></i>Hidrantes</span></div><div class="bi-chart" id="ac-ch-dia"></div></div>
+        <div class="panel bi-card"><h2 class="bi-h">Últimas inspeções</h2><p class="bi-note">Atualiza sozinho quando alguém registra uma inspeção.</p><div class="ac-feed" id="ac-feed"></div></div>
+      </div>
+      <div class="ac-duo">
+        <div class="panel bi-card"><h2 class="bi-h">Quem realizou</h2><p class="bi-note">Inspeções por inspetor no período (toque para filtrar).</p><div id="ac-pessoas" class="ac-bars"></div></div>
+        <div class="panel bi-card"><h2 class="bi-h">Onde foi realizado</h2><p class="bi-note">Por área: itens inspecionados no período / total de itens da área (barra = % da área).</p><div id="ac-areas" class="ac-bars"></div></div>
+      </div>
+      <div class="panel bi-card">
+        <div class="section-title"><h2 class="bi-h">Inspeções registradas</h2><button class="btn small" type="button" id="ac-csv">Copiar CSV</button></div>
+        <div class="table-wrap bi-scroll" style="max-height:60vh;overflow:auto"><table><thead><tr><th>Data / hora</th><th>Item</th><th>Tipo</th><th>Inspetor</th><th>Geral</th><th>Área</th><th>Locação / local</th><th>Localização</th><th>Grupo</th><th>Não conformidade</th></tr></thead><tbody id="ac-tb"></tbody></table></div>
+        <div class="muted" id="ac-cont" style="font-size:13px"></div>
+      </div>
+    </section>
     <section id="area-cronograma" class="kpi-group" style="gap:16px" hidden>
       <div class="section-title"><h2 id="cr-titulo">Cronograma</h2>
         <div class="cr-acoes"><button class="btn" type="button" id="cr-atribuir">Atribuir inspeções</button><button class="btn primary" type="button" id="cr-nova">Nova tarefa</button></div></div>
@@ -902,6 +950,10 @@ const S = {
     if (this.modo === 'local') return lsGet('insp_' + t + '_v2', {});
     const s = await this.db.collection('insp_' + t).get(); const o = {}; s.docs.forEach(d => o[d.id] = d.data().registros || []); return o;
   },
+  ouvirTodasInspecoes(t, cb) {
+    if (this.modo === 'local') { cb(lsGet('insp_' + t + '_v2', {})); return; }
+    this.db.collection('insp_' + t).onSnapshot(s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data().registros || []); cb(o); }, e => console.warn(e));
+  },
   ouvirInspecoes(t, k, cb) {
     if (this.modo === 'local') { cb(lsGet('insp_' + t + '_v2', {})[k] || []); return () => {}; }
     return this.db.doc(`insp_${t}/${k}`).onSnapshot(s => cb(s.exists ? (s.data().registros || []) : []), e => { console.warn(e); cb([]); });
@@ -1170,11 +1222,12 @@ function aplicarPapel() {
 
 /* ---------- navegação ---------- */
 function irPara(area) {
-  ['painel', 'inspecao', 'cronograma', 'bi', 'acessos'].forEach(a => { $('#nav-' + a).classList.toggle('ativo', a === area); $('#area-' + a).hidden = a !== area; });
+  ['painel', 'inspecao', 'acomp', 'cronograma', 'bi', 'acessos'].forEach(a => { $('#nav-' + a).classList.toggle('ativo', a === area); $('#area-' + a).hidden = a !== area; });
   if (area === 'inspecao') renderFinder();
   if (area === 'acessos') renderAcessos();
   if (area === 'bi') renderBI();
   if (area === 'cronograma') renderCronograma();
+  if (area === 'acomp') abrirAcomp();
   if (area === 'painel') renderTudo();
 }
 $('#nav-painel').onclick = () => irPara('painel');
@@ -1182,6 +1235,7 @@ $('#nav-inspecao').onclick = () => irPara('inspecao');
 $('#nav-acessos').onclick = () => irPara('acessos');
 $('#nav-bi').onclick = () => irPara('bi');
 $('#nav-cronograma').onclick = () => irPara('cronograma');
+$('#nav-acomp').onclick = () => irPara('acomp');
 function abaPainel(t) {
   document.querySelectorAll('#subtabs-painel button').forEach(b => b.classList.toggle('ativo', b.dataset.tab === t));
   ['geral', 'ext', 'hid', 'hist'].forEach(x => $('#tab-' + x).hidden = x !== t);
@@ -3398,6 +3452,120 @@ function abrirAtualizarInventario() {
   };
 }
 document.getElementById('dp-atualizar').addEventListener('click', abrirAtualizarInventario);
+/* --- acompanhamento das inspeções (tempo real) --- */
+const AC = { ym: null, per: 'mes', dados: { ext: null, hid: null }, ouvindo: false, dia: '', em: null };
+function ouvirInspAcomp() {
+  if (AC.ouvindo) return; AC.ouvindo = true;
+  ['ext', 'hid'].forEach(t => S.ouvirTodasInspecoes(t, o => { AC.dados[t] = o; AC.em = new Date(); INSP_CACHE = AC.dados.ext && AC.dados.hid ? { ext: AC.dados.ext, hid: AC.dados.hid } : INSP_CACHE; INSP_CACHE_EM = Date.now(); if (!$('#area-acomp').hidden) renderAcomp(); }));
+}
+function linhasAcomp() {
+  const ym = AC.ym, linhas = [], ar = areasVisiveis(), okG = g => !ar || ar.grupos.includes(g);
+  const ie = new Map(TODOS_EXT.map(i => [String(i.n), i])), ih = new Map(TODOS_HID.map(i => [i._key, i]));
+  const add = (t, chave, regs) => {
+    const it = t === 'ext' ? ie.get(chave) : ih.get(chave); if (!it || !okG(it._grupo)) return;
+    (regs || []).forEach(r => {
+      const d = String(r.data || ''); if (d.slice(0, 7) !== ym) return;
+      const ncs = Object.entries(r.respostas || {}).filter(([, v]) => v === 'NC').map(([k]) => k.replace(/^[a-z0-9]+:/i, ''));
+      const imp = !!r.importado || /T12:00:00$/.test(d);
+      linhas.push({ t, it, data: d.slice(0, 10), hora: imp ? '' : new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), ts: d, imp,
+        item: t === 'ext' ? it.tag : 'TAG ' + it.tag, tipo: t === 'ext' ? (it.tipo || '') : (it.qtdMang || 0) + ' mangueira(s)', fab: t === 'ext' ? (it.fab || '') : [it.fab1, it.fab2].filter(Boolean).join(' / '),
+        inspetor: (r.pessoa && PESSOAS[r.pessoa]?.nome) || r.inspetor || pessoaDaConta(r.por)?.nome || CR.nomes[r.por]?.name || 'Não informado',
+        geral: it.geral || '', area: it.area || '', loc: t === 'ext' ? (it.cod || it.local || '') : (it.local || ''), onde: t === 'ext' ? [it.local, it.localizacao].filter(Boolean).join(' · ') : (it.area || ''), grupo: it._grupo || '',
+        nc: [ncs.join(', '), r.nc || ''].filter(Boolean).join(' — '), temNC: !!(ncs.length || r.nc) });
+    });
+  };
+  ['ext', 'hid'].forEach(t => Object.entries(AC.dados[t] || {}).forEach(([k, regs]) => add(t, k, regs)));
+  return linhas.sort((a, b) => b.ts.localeCompare(a.ts));
+}
+function renderAcomp() {
+  if ($('#area-acomp').hidden) return;
+  AC.ym = AC.ym || ymAtual();
+  const nm = nomeMesYm(AC.ym); $('#ac-mes').textContent = nm.charAt(0).toUpperCase() + nm.slice(1);
+  $('#ac-prox').disabled = AC.ym >= ymAtual();
+  const atual = AC.ym === ymAtual();
+  $('#ac-per').hidden = !atual; if (!atual) AC.per = 'mes';
+  $('#ac-per').querySelectorAll('button').forEach(b => b.classList.toggle('ativo', b.dataset.p === AC.per));
+  $('#ac-vivo').classList.toggle('on', !!AC.em); $('#ac-vivo span').textContent = AC.em ? 'ao vivo · ' + AC.em.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'conectando…';
+  if (!AC.dados.ext || !AC.dados.hid) { $('#ac-take').innerHTML = '<span class="muted">Carregando inspeções…</span>'; return; }
+  const todas = linhasAcomp(), h = isoDe(hoje()), ini7 = addDias(h, -6);
+  const noPer = l => AC.per === 'hoje' ? l.data === h : AC.per === 'semana' ? l.data >= ini7 && l.data <= h : true;
+  const eq = $('#ac-eq').value, q = norm($('#ac-q').value), ncF = $('#ac-nc').value;
+  const base = todas.filter(l => noPer(l) && (!eq || l.t === eq));
+  // filtros encadeados
+  const ord = a => [...new Set(a.filter(Boolean))].sort((x, y) => x.localeCompare(y, 'pt-BR', { numeric: true }));
+  const sI = $('#ac-insp'), sG = $('#ac-grupo'), sGe = $('#ac-geral'), sA = $('#ac-area'), sL = $('#ac-loc');
+  opts(sI, ord(base.map(l => l.inspetor)), 'Todos'); opts(sG, ord(base.map(l => l.grupo)), 'Todos');
+  sG.querySelectorAll('option').forEach(o => { if (o.value) o.textContent = 'Grupo ' + o.value; });
+  const b1 = base.filter(l => (!sG.value || l.grupo === sG.value)); opts(sGe, ord(b1.map(l => l.geral)), 'Todos');
+  const b2 = b1.filter(l => !sGe.value || l.geral === sGe.value); opts(sA, ord(b2.map(l => l.area)), 'Todas');
+  const b3 = b2.filter(l => !sA.value || l.area === sA.value); opts(sL, ord(b3.map(l => l.loc)), 'Todas');
+  const filtroSemDia = l => (!sI.value || l.inspetor === sI.value) && (!sG.value || l.grupo === sG.value) && (!sGe.value || l.geral === sGe.value) && (!sA.value || l.area === sA.value) && (!sL.value || l.loc === sL.value) && (!ncF || (ncF === 'nc' ? l.temNC : !l.temNC)) && (!q || norm([l.item, l.tipo, l.fab, l.inspetor, l.geral, l.area, l.loc, l.onde, l.nc].join(' ')).includes(q));
+  const filtro = l => filtroSemDia(l) && (!AC.dia || l.data === AC.dia);
+  const L = base.filter(filtro);
+  // universo de itens do filtro (para % do mês)
+  const itensF = [...(eq !== 'hid' ? TODOS_EXT.map(i => ({ t: 'ext', i })) : []), ...(eq !== 'ext' ? TODOS_HID.map(i => ({ t: 'hid', i })) : [])].filter(({ t, i }) => !i._retirado && (!sG.value || i._grupo === sG.value) && (!sGe.value || i.geral === sGe.value) && (!sA.value || i.area === sA.value) && (!sL.value || (t === 'ext' ? (i.cod || i.local) : i.local) === sL.value));
+  const unicos = new Set(L.map(l => l.t + (l.t === 'ext' ? l.it.n : l.it._key)));
+  const hojeN = L.filter(l => l.data === h).length, ontem = addDias(h, -1), ontemN = todas.filter(l => l.data === ontem && (!eq || l.t === eq) && filtroSemDia(l)).length;
+  const insp = ord(L.map(l => l.inspetor)), nc = L.filter(l => l.temNC).length;
+  const pct = itensF.length ? Math.round(unicos.size / itensF.length * 100) : 0;
+  const perTxt = AC.dia ? 'em ' + fmt(AC.dia) : AC.per === 'hoje' ? 'hoje' : AC.per === 'semana' ? 'nos últimos 7 dias' : atual ? 'neste mês' : 'em ' + nm;
+  $('#ac-kpis').innerHTML = kpiStatic([
+    { s: 'Azul', l: 'Inspeções ' + perTxt, v: nBR(L.length), sub: `${nBR(L.filter(l => l.t === 'ext').length)} extintores · ${nBR(L.filter(l => l.t === 'hid').length)} hidrantes` },
+    { s: 'Liberado', l: 'Itens cobertos', v: pct + '%', sub: `${nBR(unicos.size)} de ${nBR(itensF.length)} itens do filtro` },
+    ...(atual ? [{ s: '', l: 'Hoje', v: nBR(hojeN), sub: `ontem: ${nBR(ontemN)}` }] : []),
+    { s: 'Dez', l: 'Inspetores', v: nBR(insp.length), sub: insp.length ? 'registraram no período' : 'ninguém registrou' },
+    { s: 'Vencido', l: 'Com não conformidade', v: nBR(nc), sub: L.length ? Math.round(nc / L.length * 100) + '% das inspeções' : '—' }]);
+  const ult = L[0];
+  $('#ac-take').innerHTML = L.length ? `<b>${nBR(L.length)} inspeções ${esc(perTxt)}</b>, por ${nBR(insp.length)} inspetor(es), cobrindo ${pct}% dos itens do filtro. Última: <b>${esc(ult.item)}</b> (${esc(ult.onde || ult.area)}) por ${esc(ult.inspetor)} em ${fmt(ult.data)}${ult.hora ? ' às ' + ult.hora : ''}.` : `<span class="muted">Nenhuma inspeção registrada ${esc(perTxt)} com esses filtros.</span>`;
+  // feed
+  $('#ac-feed').innerHTML = L.slice(0, 12).map(l => `<div class="ac-ev${l.temNC ? ' nc' : ''}"><span class="ac-quando">${fmtC(l.data)}${l.hora ? '<small>' + l.hora + '</small>' : ''}</span><div><div><strong>${esc(l.item)}</strong> <span class="muted">· ${l.t === 'ext' ? 'Extintor' : 'Hidrante'} · ${esc(l.tipo)}</span></div><div class="muted" style="font-size:12px">${esc(l.inspetor)} · ${esc(l.onde || l.area)}</div>${l.temNC ? `<div class="ac-nctx">NC: ${esc(l.nc)}</div>` : ''}</div></div>`).join('') || '<div class="bi-empty">Nada registrado ainda.</div>';
+  // barras por pessoa e por área
+  const barras = (el, rows, onClick) => { const mx = Math.max(1, ...rows.map(r => r.v)); el.innerHTML = rows.length ? rows.map(r => `<button type="button" class="ac-bar${r.on ? ' on' : ''}" data-k="${esc(r.k)}"><span class="nm">${esc(r.k)}</span><span class="tr"><span class="fl" style="width:${r.tot ? Math.min(100, r.v / r.tot * 100) : r.v / mx * 100}%"></span></span><span class="vl">${nBR(r.v)}${r.tot ? '<small> / ' + nBR(r.tot) + '</small>' : ''}</span></button>`).join('') : '<div class="bi-empty">Sem dados no período.</div>'; el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => onClick(b.dataset.k)); };
+  const cont = (arr, f) => { const o = {}; arr.forEach(x => { const k = f(x); if (k) o[k] = (o[k] || 0) + 1; }); return o; };
+  const pP = cont(L, l => l.inspetor);
+  barras($('#ac-pessoas'), Object.entries(pP).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v, on: sI.value === k })), k => { sI.value = sI.value === k ? '' : k; renderAcomp(); });
+  const totA = cont(itensF.map(x => x.i), i => i.area), feitosA = {}; unicos.forEach(u => { const l = L.find(x => x.t + (x.t === 'ext' ? x.it.n : x.it._key) === u); if (l) feitosA[l.area] = (feitosA[l.area] || 0) + 1; });
+  barras($('#ac-areas'), Object.entries(feitosA).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v, tot: totA[k] || 0, on: sA.value === k })), k => { sA.value = sA.value === k ? '' : k; renderAcomp(); });
+  // tabela
+  const mostra = L.slice(0, 500);
+  $('#ac-tb').innerHTML = mostra.length ? mostra.map(l => `<tr${l.temNC ? ' class="ac-row-nc"' : ''}><td class="num nowrap">${fmt(l.data)}${l.hora ? ' <span class="muted">' + l.hora + '</span>' : l.imp ? ' <span class="muted" title="Importada da planilha de campo">planilha</span>' : ''}</td><td class="nowrap"><strong>${esc(l.item)}</strong>${l.fab ? '<div class="muted" style="font-size:12px">Nº ' + esc(l.fab) + '</div>' : ''}</td><td class="nowrap">${esc(l.tipo)}</td><td>${esc(l.inspetor)}</td><td>${esc(l.geral)}</td><td>${esc(l.area)}</td><td class="nowrap">${esc(l.loc)}</td><td>${esc(l.onde)}</td><td>${esc(l.grupo)}</td><td>${l.temNC ? '<span class="tg tg-v">NC</span> ' + esc(l.nc) : '<span class="muted">—</span>'}</td></tr>`).join('') : '<tr><td colspan="10"><div class="bi-empty">Nenhuma inspeção com esses filtros.</div></td></tr>';
+  $('#ac-cont').textContent = L.length > mostra.length ? `Mostrando as ${nBR(mostra.length)} mais recentes de ${nBR(L.length)}. Use os filtros ou copie o CSV para ver todas.` : `${nBR(L.length)} inspeção(ões).` + (AC.dia ? ' Filtrando o dia ' + fmt(AC.dia) + ' — toque na barra de novo para limpar.' : '');
+  AC.ultimas = L;
+  desenharAcDia(base.filter(filtroSemDia));
+}
+function desenharAcDia(L) {
+  const el = $('#ac-ch-dia'); if (!window.d3) { el.innerHTML = '<div class="bi-empty">Gráfico indisponível sem conexão.</div>'; return; }
+  const ym = AC.ym, nd = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate(), h = isoDe(hoje());
+  let dias = []; for (let d = 1; d <= nd; d++) dias.push(ym + '-' + String(d).padStart(2, '0'));
+  if (AC.per === 'hoje') dias = [h]; else if (AC.per === 'semana') dias = Array.from({ length: 7 }, (_, i) => addDias(h, i - 6));
+  const rows = dias.map(d => ({ d, e: L.filter(l => l.data === d && l.t === 'ext').length, hh: L.filter(l => l.data === d && l.t === 'hid').length }));
+  const W = el.clientWidth || 600, H = 240, m = { t: 16, r: 10, b: 26, l: 36 };
+  const x = d3.scaleBand(rows.map(r => r.d), [m.l, W - m.r]).padding(.18), y = d3.scaleLinear([0, Math.max(1, ...rows.map(r => r.e + r.hh))], [H - m.b, m.t]).nice();
+  const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
+  svg.append('g').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', 'var(--border)');
+  svg.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', m.l - 6).attr('y', d => y(d)).attr('dy', '.35em').attr('text-anchor', 'end').attr('font-size', 11).attr('fill', 'var(--muted)').text(d => nBR(d));
+  const passo = Math.ceil(rows.length / (W < 500 ? 8 : 16));
+  svg.append('g').selectAll('text').data(rows.filter((r, i) => i % passo === 0)).join('text').attr('x', r => x(r.d) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', 'var(--muted)').text(r => fmtC(r.d));
+  const g = svg.append('g').selectAll('g').data(rows).join('g').attr('cursor', 'pointer').on('click', (ev, r) => { AC.dia = AC.dia === r.d ? '' : r.d; renderAcomp(); });
+  g.append('rect').attr('x', r => x(r.d)).attr('width', x.bandwidth()).attr('y', m.t).attr('height', H - m.b - m.t).attr('fill', r => r.d === AC.dia ? 'var(--bg-hover)' : 'transparent');
+  g.append('rect').attr('x', r => x(r.d)).attr('width', x.bandwidth()).attr('y', r => y(r.e)).attr('height', r => y(0) - y(r.e)).attr('rx', 2).attr('fill', 'var(--accent)');
+  g.append('rect').attr('x', r => x(r.d)).attr('width', x.bandwidth()).attr('y', r => y(r.e + r.hh)).attr('height', r => y(r.e) - y(r.e + r.hh)).attr('rx', 2).attr('fill', 'var(--bar-2)');
+  g.filter(r => r.e + r.hh > 0 && x.bandwidth() > 14).append('text').attr('x', r => x(r.d) + x.bandwidth() / 2).attr('y', r => y(r.e + r.hh) - 4).attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700).attr('fill', 'var(--text)').text(r => nBR(r.e + r.hh));
+  g.append('title').text(r => `${fmt(r.d)}: ${r.e} extintor(es), ${r.hh} hidrante(s)`);
+  el.replaceChildren(svg.node());
+}
+async function abrirAcomp() {
+  ouvirInspAcomp();
+  if (!window.d3 && !biD3Falhou) { try { await carregarD3(); } catch (e) { biD3Falhou = true; } }
+  renderAcomp();
+}
+$('#ac-ant').onclick = () => { AC.ym = ymSoma(AC.ym || ymAtual(), -1); AC.dia = ''; renderAcomp(); };
+$('#ac-prox').onclick = () => { AC.ym = ymSoma(AC.ym || ymAtual(), 1); if (AC.ym > ymAtual()) AC.ym = ymAtual(); AC.dia = ''; renderAcomp(); };
+$('#ac-per').querySelectorAll('button').forEach(b => b.onclick = () => { AC.per = b.dataset.p; AC.dia = ''; renderAcomp(); });
+['ac-q', 'ac-eq', 'ac-insp', 'ac-grupo', 'ac-geral', 'ac-area', 'ac-loc', 'ac-nc'].forEach(id => $('#' + id).addEventListener('input', () => renderAcomp()));
+$('#ac-csv').onclick = () => copiar([['Data', 'Hora', 'Item', 'Equipamento', 'Tipo', 'Nº fabricação', 'Inspetor', 'Geral', 'Área', 'Locação / local', 'Localização', 'Grupo', 'Não conformidade'], ...(AC.ultimas || []).map(l => [fmt(l.data), l.hora || (l.imp ? 'planilha' : ''), l.item, l.t === 'ext' ? 'Extintor' : 'Hidrante', l.tipo, l.fab, l.inspetor, l.geral, l.area, l.loc, l.onde, l.grupo, l.nc])].map(x => x.map(csvCell).join(';')).join('\n'));
+setInterval(() => { if (!$('#area-acomp').hidden && AC.em) $('#ac-vivo span').textContent = 'ao vivo · ' + AC.em.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }, 30000);
+
 
 /* --- editor de atribuição de inspeções (administrador) --- */
 function opcoesPessoas(sel) {
