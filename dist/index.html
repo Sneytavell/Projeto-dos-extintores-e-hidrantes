@@ -333,6 +333,8 @@ td.nowrap{white-space:nowrap}
 .ac-bar .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ac-bar .tr{position:relative;height:12px;border-radius:6px;background:var(--border);overflow:hidden}
 .ac-bar .bg{position:absolute;inset:0 auto 0 0;background:var(--bar-2);opacity:.35}.ac-bar .fl{position:absolute;inset:0 auto 0 0;background:var(--accent);z-index:1;border-radius:6px}
 .ac-bar .vl{font-weight:700;font-variant-numeric:tabular-nums}.ac-bar .vl small{font-weight:400;color:var(--muted)}
+
+.ac-lk{background:none;border:0;padding:0;font:inherit;color:var(--accent);cursor:pointer;text-align:left;text-decoration:underline dotted;text-underline-offset:3px}.ac-lk:hover{text-decoration:underline}
 tr.ac-row-nc td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
 #ac-tb td:nth-child(4),#ac-tb td:nth-child(5),#ac-tb td:nth-child(6){min-width:130px}#ac-tb td:nth-child(9){min-width:200px}#ac-tb td:nth-child(11){min-width:180px}
 .bp-dia{margin-top:10px;font-size:14px}.bp-dia summary{cursor:pointer;color:var(--accent);font-weight:600}
@@ -659,7 +661,8 @@ tr.ac-row-nc td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
         <div class="field"><label for="ac-grupo">Grupo</label><select id="ac-grupo"></select></div>
         <div class="field"><label for="ac-geral">Geral</label><select id="ac-geral"></select></div>
         <div class="field"><label for="ac-area">Área</label><select id="ac-area"></select></div>
-        <div class="field"><label for="ac-loc">Locação / local</label><select id="ac-loc"></select></div>
+        <div class="field"><label for="ac-loc">Locação</label><select id="ac-loc"></select></div>
+        <div class="field"><label for="ac-local">Local</label><select id="ac-local"></select></div>
         <div class="field"><label for="ac-nc">Situação</label><select id="ac-nc"><option value="">Todas</option><option value="nc">Com não conformidade</option><option value="ok">Sem não conformidade</option></select></div>
       </div>
       <p class="bi-take" id="ac-take"></p>
@@ -671,11 +674,11 @@ tr.ac-row-nc td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
       </div>
       <div class="ac-duo">
         <div class="panel bi-card"><h2 class="bi-h">Quem realizou</h2><p class="bi-note">Inspeções por inspetor no período (toque para filtrar).</p><div id="ac-pessoas" class="ac-bars"></div></div>
-        <div class="panel bi-card"><h2 class="bi-h">Onde foi realizado</h2><p class="bi-note">Por área: itens inspecionados no período / total de itens da área (barra = % da área).</p><div id="ac-areas" class="ac-bars"></div></div>
+        <div class="panel bi-card"><h2 class="bi-h">Onde foi realizado</h2><nav class="subtabs bp-grupos" id="ac-onde"><button type="button" data-o="local" class="ativo">Por local</button><button type="button" data-o="area">Por área</button><button type="button" data-o="areaPl">Por área da planilha</button></nav><p class="bi-note">Itens inspecionados no período / total de itens (barra = % concluído). Toque para filtrar.</p><div id="ac-areas" class="ac-bars"></div></div>
       </div>
       <div class="panel bi-card">
         <div class="section-title"><h2 class="bi-h">Inspeções registradas</h2><button class="btn small" type="button" id="ac-csv">Copiar CSV</button></div>
-        <div class="table-wrap bi-scroll" style="max-height:60vh;overflow:auto"><table><thead><tr><th>Data / hora</th><th>Item</th><th>Tipo</th><th>Inspetor</th><th>Geral</th><th>Área</th><th>Área da planilha</th><th>Locação / local</th><th>Localização</th><th>Grupo</th><th>Não conformidade</th></tr></thead><tbody id="ac-tb"></tbody></table></div>
+        <div class="table-wrap bi-scroll" style="max-height:60vh;overflow:auto"><table><thead><tr><th>Data / hora</th><th>Item</th><th>Tipo</th><th>Inspetor</th><th>Geral</th><th>Área</th><th>Área da planilha</th><th>Locação</th><th>Local / localização</th><th>Grupo</th><th>Não conformidade</th></tr></thead><tbody id="ac-tb"></tbody></table></div>
         <div class="muted" id="ac-cont" style="font-size:13px"></div>
       </div>
     </section>
@@ -3473,7 +3476,7 @@ function linhasAcomp() {
       linhas.push({ t, it, data: d.slice(0, 10), hora: imp ? '' : new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), ts: d, imp,
         item: t === 'ext' ? it.tag : 'TAG ' + it.tag, tipo: t === 'ext' ? (it.tipo || '') : (it.qtdMang || 0) + ' mangueira(s)', fab: t === 'ext' ? (it.fab || '') : [it.fab1, it.fab2].filter(Boolean).join(' / '),
         inspetor: (r.pessoa && PESSOAS[r.pessoa]?.nome) || r.inspetor || pessoaDaConta(r.por)?.nome || CR.nomes[r.por]?.name || 'Não informado',
-        geral: it.geral || '', area: it.area || '', areaPl: t === 'ext' ? areaPlanilha(it) : '', loc: t === 'ext' ? (it.cod || it.local || '') : (it.local || ''), onde: t === 'ext' ? [it.local, it.localizacao].filter(Boolean).join(' · ') : (it.area || ''), grupo: it._grupo || '',
+        geral: it.geral || '', area: it.area || '', local: it.local || '', areaPl: t === 'ext' ? areaPlanilha(it) : '', loc: t === 'ext' ? (it.cod || it.local || '') : (it.local || ''), onde: t === 'ext' ? [it.local, it.localizacao].filter(Boolean).join(' · ') : (it.area || ''), grupo: it._grupo || '',
         nc: [ncs.join(', '), r.nc || ''].filter(Boolean).join(' — '), temNC: !!(ncs.length || r.nc) });
     });
   };
@@ -3496,17 +3499,18 @@ function renderAcomp() {
   const base = todas.filter(l => noPer(l) && (!eq || l.t === eq));
   // filtros encadeados
   const ord = a => [...new Set(a.filter(Boolean))].sort((x, y) => x.localeCompare(y, 'pt-BR', { numeric: true }));
-  const sI = $('#ac-insp'), sG = $('#ac-grupo'), sGe = $('#ac-geral'), sA = $('#ac-area'), sL = $('#ac-loc');
+  const sI = $('#ac-insp'), sG = $('#ac-grupo'), sGe = $('#ac-geral'), sA = $('#ac-area'), sL = $('#ac-loc'), sLo = $('#ac-local');
   opts(sI, ord(base.map(l => l.inspetor)), 'Todos'); opts(sG, ord(base.map(l => l.grupo)), 'Todos');
   sG.querySelectorAll('option').forEach(o => { if (o.value) o.textContent = 'Grupo ' + o.value; });
   const b1 = base.filter(l => (!sG.value || l.grupo === sG.value)); opts(sGe, ord(b1.map(l => l.geral)), 'Todos');
   const b2 = b1.filter(l => !sGe.value || l.geral === sGe.value); opts(sA, ord(b2.map(l => l.area)), 'Todas');
   const b3 = b2.filter(l => !sA.value || l.area === sA.value); opts(sL, ord(b3.map(l => l.loc)), 'Todas');
-  const filtroSemDia = l => (!sI.value || l.inspetor === sI.value) && (!sG.value || l.grupo === sG.value) && (!sGe.value || l.geral === sGe.value) && (!sA.value || l.area === sA.value) && (!sL.value || l.loc === sL.value) && (!ncF || (ncF === 'nc' ? l.temNC : !l.temNC)) && (!q || norm([l.item, l.tipo, l.fab, l.inspetor, l.geral, l.area, l.areaPl, l.loc, l.onde, l.nc].join(' ')).includes(q));
+  const b4 = b3.filter(l => !sL.value || l.loc === sL.value); if (AC.localSel && ![...b4.map(l => l.local)].includes(AC.localSel)) b4.push({ local: AC.localSel }); opts(sLo, ord(b4.map(l => l.local)), 'Todos'); if (AC.localSel) { sLo.value = AC.localSel; AC.localSel = null; }
+  const filtroSemDia = l => (!sI.value || l.inspetor === sI.value) && (!sG.value || l.grupo === sG.value) && (!sGe.value || l.geral === sGe.value) && (!sA.value || l.area === sA.value) && (!sL.value || l.loc === sL.value) && (!sLo.value || l.local === sLo.value) && (!ncF || (ncF === 'nc' ? l.temNC : !l.temNC)) && (!q || norm([l.item, l.tipo, l.fab, l.inspetor, l.geral, l.area, l.areaPl, l.loc, l.onde, l.nc].join(' ')).includes(q));
   const filtro = l => filtroSemDia(l) && (!AC.dia || l.data === AC.dia);
   const L = base.filter(filtro);
   // universo de itens do filtro (para % do mês)
-  const itensF = [...(eq !== 'hid' ? TODOS_EXT.map(i => ({ t: 'ext', i })) : []), ...(eq !== 'ext' ? TODOS_HID.map(i => ({ t: 'hid', i })) : [])].filter(({ t, i }) => !i._retirado && (!sG.value || i._grupo === sG.value) && (!sGe.value || i.geral === sGe.value) && (!sA.value || i.area === sA.value) && (!sL.value || (t === 'ext' ? (i.cod || i.local) : i.local) === sL.value));
+  const itensF = [...(eq !== 'hid' ? TODOS_EXT.map(i => ({ t: 'ext', i })) : []), ...(eq !== 'ext' ? TODOS_HID.map(i => ({ t: 'hid', i })) : [])].filter(({ t, i }) => !i._retirado && (!sG.value || i._grupo === sG.value) && (!sGe.value || i.geral === sGe.value) && (!sA.value || i.area === sA.value) && (!sL.value || (t === 'ext' ? (i.cod || i.local) : i.local) === sL.value) && (!sLo.value || i.local === sLo.value));
   const unicos = new Set(L.map(l => l.t + (l.t === 'ext' ? l.it.n : l.it._key)));
   const hojeN = L.filter(l => l.data === h).length, ontem = addDias(h, -1), ontemN = todas.filter(l => l.data === ontem && (!eq || l.t === eq) && filtroSemDia(l)).length;
   const insp = ord(L.map(l => l.inspetor)), nc = L.filter(l => l.temNC).length;
@@ -3521,17 +3525,24 @@ function renderAcomp() {
   const ult = L[0];
   $('#ac-take').innerHTML = L.length ? `<b>${nBR(L.length)} inspeções ${esc(perTxt)}</b>, por ${nBR(insp.length)} inspetor(es), cobrindo ${pct}% dos itens do filtro. Última: <b>${esc(ult.item)}</b> (${esc(ult.onde || ult.area)}) por ${esc(ult.inspetor)} em ${fmt(ult.data)}${ult.hora ? ' às ' + ult.hora : ''}.` : `<span class="muted">Nenhuma inspeção registrada ${esc(perTxt)} com esses filtros.</span>`;
   // feed
-  $('#ac-feed').innerHTML = L.slice(0, 12).map(l => `<div class="ac-ev${l.temNC ? ' nc' : ''}"><span class="ac-quando">${fmtC(l.data)}${l.hora ? '<small>' + l.hora + '</small>' : ''}</span><div><div><strong>${esc(l.item)}</strong> <span class="muted">· ${l.t === 'ext' ? 'Extintor' : 'Hidrante'} · ${esc(l.tipo)}</span></div><div class="muted" style="font-size:12px">${esc(l.inspetor)} · ${esc(l.onde || l.area)}</div>${l.temNC ? `<div class="ac-nctx">NC: ${esc(l.nc)}</div>` : ''}</div></div>`).join('') || '<div class="bi-empty">Nada registrado ainda.</div>';
+  $('#ac-feed').innerHTML = L.slice(0, 12).map(l => `<div class="ac-ev${l.temNC ? ' nc' : ''}"><span class="ac-quando">${fmtC(l.data)}${l.hora ? '<small>' + l.hora + '</small>' : ''}</span><div><div><strong>${esc(l.item)}</strong> <span class="muted">· ${l.t === 'ext' ? 'Extintor' : 'Hidrante'} · ${esc(l.tipo)}</span></div><div class="muted" style="font-size:12px">${esc(l.inspetor)} · <button type="button" class="ac-lk" data-local="${esc(l.local)}" title="Ver só este local">${esc(l.local || l.area)}</button>${l.t === 'ext' && l.it.localizacao ? ' · ' + esc(l.it.localizacao) : ''}</div>${l.temNC ? `<div class="ac-nctx">NC: ${esc(l.nc)}</div>` : ''}</div></div>`).join('') || '<div class="bi-empty">Nada registrado ainda.</div>';
   // barras por pessoa e por área
   const barras = (el, rows, onClick) => { const mx = Math.max(1, ...rows.map(r => r.v)); el.innerHTML = rows.length ? rows.map(r => `<button type="button" class="ac-bar${r.on ? ' on' : ''}" data-k="${esc(r.k)}"><span class="nm">${esc(r.k)}</span><span class="tr"><span class="fl" style="width:${r.tot ? Math.min(100, r.v / r.tot * 100) : r.v / mx * 100}%"></span></span><span class="vl">${nBR(r.v)}${r.tot ? '<small> / ' + nBR(r.tot) + '</small>' : ''}</span></button>`).join('') : '<div class="bi-empty">Sem dados no período.</div>'; el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => onClick(b.dataset.k)); };
   const cont = (arr, f) => { const o = {}; arr.forEach(x => { const k = f(x); if (k) o[k] = (o[k] || 0) + 1; }); return o; };
   const pP = cont(L, l => l.inspetor);
   barras($('#ac-pessoas'), Object.entries(pP).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v, on: sI.value === k })), k => { sI.value = sI.value === k ? '' : k; renderAcomp(); });
-  const totA = cont(itensF.map(x => x.i), i => i.area), feitosA = {}; unicos.forEach(u => { const l = L.find(x => x.t + (x.t === 'ext' ? x.it.n : x.it._key) === u); if (l) feitosA[l.area] = (feitosA[l.area] || 0) + 1; });
-  barras($('#ac-areas'), Object.entries(feitosA).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v, tot: totA[k] || 0, on: sA.value === k })), k => { sA.value = sA.value === k ? '' : k; renderAcomp(); });
+  const onde = AC.onde || 'local', chO = { local: x => x.local, area: x => x.area, areaPl: x => x.areaPl }[onde];
+  $('#ac-onde').querySelectorAll('button').forEach(b => b.classList.toggle('ativo', b.dataset.o === onde));
+  const totA = cont(itensF.map(x => ({ local: x.i.local, area: x.i.area, areaPl: x.t === 'ext' ? areaPlanilha(x.i) : '' })), chO), feitosA = {}, vistoU = new Set();
+  L.forEach(l => { const u = l.t + (l.t === 'ext' ? l.it.n : l.it._key); if (vistoU.has(u)) return; vistoU.add(u); const k = chO(l); if (k) feitosA[k] = (feitosA[k] || 0) + 1; });
+  const selO = onde === 'local' ? sLo.value : onde === 'area' ? sA.value : (AC.areaPlSel || '');
+  barras($('#ac-areas'), Object.entries(feitosA).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v, tot: totA[k] || 0, on: selO === k })), k => {
+    if (onde === 'local') AC.localSel = sLo.value === k ? '' : k; else if (onde === 'area') sA.value = sA.value === k ? '' : k; else { AC.areaPlSel = AC.areaPlSel === k ? '' : k; $('#ac-q').value = AC.areaPlSel; }
+    if (onde === 'local' && !AC.localSel) sLo.value = '';
+    renderAcomp(); });
   // tabela
   const mostra = L.slice(0, 500);
-  $('#ac-tb').innerHTML = mostra.length ? mostra.map(l => `<tr${l.temNC ? ' class="ac-row-nc"' : ''}><td class="num nowrap">${fmt(l.data)}${l.hora ? ' <span class="muted">' + l.hora + '</span>' : l.imp ? ' <span class="muted" title="Importada da planilha de campo">planilha</span>' : ''}</td><td class="nowrap"><strong>${esc(l.item)}</strong>${l.fab ? '<div class="muted" style="font-size:12px">Nº ' + esc(l.fab) + '</div>' : ''}</td><td class="nowrap">${esc(l.tipo)}</td><td>${esc(l.inspetor)}</td><td>${esc(l.geral)}</td><td>${esc(l.area)}</td><td class="nowrap">${esc(l.areaPl || '—')}</td><td class="nowrap">${esc(l.loc)}</td><td>${esc(l.onde)}</td><td>${esc(l.grupo)}</td><td>${l.temNC ? '<span class="tg tg-v">NC</span> ' + esc(l.nc) : '<span class="muted">—</span>'}</td></tr>`).join('') : '<tr><td colspan="11"><div class="bi-empty">Nenhuma inspeção com esses filtros.</div></td></tr>';
+  $('#ac-tb').innerHTML = mostra.length ? mostra.map(l => `<tr${l.temNC ? ' class="ac-row-nc"' : ''}><td class="num nowrap">${fmt(l.data)}${l.hora ? ' <span class="muted">' + l.hora + '</span>' : l.imp ? ' <span class="muted" title="Importada da planilha de campo">planilha</span>' : ''}</td><td class="nowrap"><strong>${esc(l.item)}</strong>${l.fab ? '<div class="muted" style="font-size:12px">Nº ' + esc(l.fab) + '</div>' : ''}</td><td class="nowrap">${esc(l.tipo)}</td><td>${esc(l.inspetor)}</td><td>${esc(l.geral)}</td><td>${esc(l.area)}</td><td class="nowrap">${esc(l.areaPl || '—')}</td><td class="nowrap">${esc(l.loc)}</td><td><button type="button" class="ac-lk" data-local="${esc(l.local)}" title="Ver só este local">${esc(l.local)}</button>${l.t === 'ext' && l.it.localizacao ? '<div class="muted" style="font-size:12px">' + esc(l.it.localizacao) + '</div>' : ''}</td><td>${esc(l.grupo)}</td><td>${l.temNC ? '<span class="tg tg-v">NC</span> ' + esc(l.nc) : '<span class="muted">—</span>'}</td></tr>`).join('') : '<tr><td colspan="11"><div class="bi-empty">Nenhuma inspeção com esses filtros.</div></td></tr>';
   $('#ac-cont').textContent = L.length > mostra.length ? `Mostrando as ${nBR(mostra.length)} mais recentes de ${nBR(L.length)}. Use os filtros ou copie o CSV para ver todas.` : `${nBR(L.length)} inspeção(ões).` + (AC.dia ? ' Filtrando o dia ' + fmt(AC.dia) + ' — toque na barra de novo para limpar.' : '');
   AC.ultimas = L;
   desenharAcDia(base.filter(filtroSemDia));
@@ -3565,7 +3576,9 @@ async function abrirAcomp() {
 $('#ac-ant').onclick = () => { AC.ym = ymSoma(AC.ym || ymAtual(), -1); AC.dia = ''; renderAcomp(); };
 $('#ac-prox').onclick = () => { AC.ym = ymSoma(AC.ym || ymAtual(), 1); if (AC.ym > ymAtual()) AC.ym = ymAtual(); AC.dia = ''; renderAcomp(); };
 $('#ac-per').querySelectorAll('button').forEach(b => b.onclick = () => { AC.per = b.dataset.p; AC.dia = ''; renderAcomp(); });
-['ac-q', 'ac-eq', 'ac-insp', 'ac-grupo', 'ac-geral', 'ac-area', 'ac-loc', 'ac-nc'].forEach(id => $('#' + id).addEventListener('input', () => renderAcomp()));
+['#ac-feed', '#ac-tb'].forEach(sel => $(sel).addEventListener('click', e => { const b = e.target.closest('.ac-lk'); if (!b) return; AC.localSel = b.dataset.local; AC.onde = 'local'; renderAcomp(); $('#area-acomp').scrollIntoView({ behavior: 'smooth' }); }));
+$('#ac-onde').querySelectorAll('button').forEach(b => b.onclick = () => { AC.onde = b.dataset.o; renderAcomp(); });
+['ac-q', 'ac-eq', 'ac-insp', 'ac-grupo', 'ac-geral', 'ac-area', 'ac-loc', 'ac-local', 'ac-nc'].forEach(id => $('#' + id).addEventListener('input', () => renderAcomp()));
 $('#ac-csv').onclick = () => copiar([['Data', 'Hora', 'Item', 'Equipamento', 'Tipo', 'Nº fabricação', 'Inspetor', 'Geral', 'Área', 'Área da planilha', 'Locação / local', 'Localização', 'Grupo', 'Não conformidade'], ...(AC.ultimas || []).map(l => [fmt(l.data), l.hora || (l.imp ? 'planilha' : ''), l.item, l.t === 'ext' ? 'Extintor' : 'Hidrante', l.tipo, l.fab, l.inspetor, l.geral, l.area, l.areaPl, l.loc, l.onde, l.grupo, l.nc])].map(x => x.map(csvCell).join(';')).join('\n'));
 setInterval(() => { if (!$('#area-acomp').hidden && AC.em) $('#ac-vivo span').textContent = 'ao vivo · ' + AC.em.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }, 30000);
 
