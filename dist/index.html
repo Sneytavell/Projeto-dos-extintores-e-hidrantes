@@ -658,7 +658,7 @@ tr.ac-row-nc td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
     <section id="area-invent" class="kpi-group" style="gap:16px" hidden>
       <div class="section-title"><h2>Situação do inventário</h2>
         <div class="cr-acoes"><span class="ac-vivo on" id="iv-vivo"><i></i><span>ao vivo</span></span></div></div>
-      <nav class="subtabs bp-grupos" id="iv-st"><button type="button" data-s="" class="ativo">Todos</button><button type="button" data-s="Vencido">Vencidos</button><button type="button" data-s="Atenção">Vencem em até 10 dias</button><button type="button" data-s="Regular">Liberados</button><button type="button" data-s="Sem teste">Sem data</button><button type="button" data-s="Retirado">Retirados do controle</button></nav>
+      <nav class="subtabs bp-grupos" id="iv-st"><button type="button" data-s="" class="ativo">Todos</button><button type="button" data-s="Vencido">Vencidos</button><button type="button" data-s="Atenção">Vencem em até 10 dias</button><button type="button" data-s="Regular">Liberados</button><button type="button" data-s="Sem teste">Sem data</button><button type="button" data-s="Retirado">Retirados do controle</button><button type="button" data-s="mov">↕ Entradas e saídas</button></nav>
       <div class="toolbar">
         <div class="field wide"><label for="iv-q">Buscar</label><input id="iv-q" type="text" placeholder="Item, nº fabricação, local, tipo…"></div>
         <div class="field"><label for="iv-eq">Equipamento</label><select id="iv-eq"><option value="">Tudo</option><option value="ext">Extintores</option><option value="hid">Hidrantes</option></select></div>
@@ -682,6 +682,12 @@ tr.ac-row-nc td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
       <div class="ac-duo">
         <div class="panel bi-card"><h2 class="bi-h">Por tipo</h2><p class="bi-note">Quantidade de cada tipo e a situação (toque para filtrar).</p><div id="iv-tipos" class="iv-bars"></div></div>
         <div class="panel bi-card"><h2 class="bi-h">Vencimentos por mês</h2><p class="bi-note">Recarga, teste e mangueiras que vencem em cada mês (próximos 12 meses; vencidos em vermelho).</p><div class="bi-chart" id="iv-ch-mes"></div></div>
+      </div>
+      <div class="panel bi-card" id="iv-mov">
+        <div class="section-title"><h2 class="bi-h">Entradas e saídas do controle</h2><div class="cr-acoes"><select id="iv-mov-per" aria-label="Período" style="width:auto"></select><button class="btn small" type="button" id="iv-mov-csv">Copiar CSV</button></div></div>
+        <nav class="subtabs bp-grupos" id="iv-mov-tab"></nav>
+        <p class="bi-note" id="iv-mov-nota"></p>
+        <div class="table-wrap bi-scroll" style="max-height:50vh;overflow:auto"><table><thead><tr><th>Data</th><th>Item</th><th>Tipo</th><th>Local / localização</th><th>Grupo</th><th id="iv-mov-c">Origem</th><th>Quem</th><th></th></tr></thead><tbody id="iv-mov-tb"></tbody></table></div>
       </div>
       <div class="panel bi-card">
         <div class="section-title"><h2 class="bi-h">Equipamentos</h2><button class="btn small" type="button" id="iv-csv">Copiar CSV</button></div>
@@ -3698,6 +3704,7 @@ function renderInv() {
   $('#iv-cont').textContent = lista.length > mostra.length ? `Mostrando os ${nBR(mostra.length)} mais urgentes de ${nBR(lista.length)}. Use os filtros ou copie o CSV para ver todos.` : `${nBR(lista.length)} equipamento(s).`;
   IV.lista = lista;
   desenharIvMes(U);
+  renderMovInv();
 }
 function desenharIvMes(U) {
   const el = $('#iv-ch-mes'); if (!window.d3) { el.innerHTML = '<div class="bi-empty">Gráfico indisponível sem conexão.</div>'; return; }
@@ -3714,8 +3721,47 @@ function desenharIvMes(U) {
   g.filter(r => r.n > 0).append('text').attr('x', r => x(r.m) + x.bandwidth() / 2).attr('y', r => y(r.n) - 4).attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 700).attr('fill', 'var(--text)').text(r => nBR(r.n));
   el.replaceChildren(svg.node());
 }
+const IVM = { aba: 'ent', per: '' };
+function movimentosInv() {
+  const ent = [], sai = [], ar = areasVisiveis(), okG = g => !ar || ar.grupos.includes(g);
+  const todosE = [...EXT, ...RET_EXT], ih = new Map([...HID, ...RET_HID].map(i => [i._key, i]));
+  Object.entries(NOVOS).forEach(([id, x]) => {
+    const it = x.tipo === 'ext' ? todosE.find(i => String(i.tag).trim() === String(x.tag).trim() && norm(i.localizacao) === norm(x.localizacao)) : ih.get(chaveHid(x));
+    const g = it?._grupo || x.grupo || ''; if (!okG(g)) return;
+    ent.push({ id, t: x.tipo, it, data: String(x.em || '').slice(0, 10), item: x.tipo === 'ext' ? x.tag : 'TAG ' + x.tag, tipo: x.tipo === 'ext' ? (x.tipoCap || it?.tipo || '') : 'Hidrante', onde: x.tipo === 'ext' ? [it?.local || x.local, x.localizacao].filter(Boolean).join(' · ') : [x.area, x.local].filter(Boolean).join(' · '), grupo: g, motivo: x.origem ? 'Planilha: ' + x.origem : 'Incluído no sistema', quem: x.por ? (nm => /sem nome visível/.test(nm) ? '' : nm.replace(/ \((você|sem conta)\)/g, ''))(nomeDe(x.por)) : '', retirado: !!it?._retirado });
+  });
+  const addSai = (t, it, chave) => { if (!it._retirado || !okG(it._grupo)) return; const h = (AJ[t][chave]?.historico || []).slice().reverse().find(e => e.motivo === 'Retirado do controle');
+    sai.push({ t, it, chave, data: String(it._retirado).slice(0, 10), item: t === 'ext' ? it.tag : 'TAG ' + it.tag, tipo: t === 'ext' ? it.tipo : 'Hidrante', onde: t === 'ext' ? [it.local, it.localizacao].filter(Boolean).join(' · ') : [it.area, it.local].filter(Boolean).join(' · '), grupo: it._grupo || '', motivo: it._retMotivo || 'Retirado', quem: h?.nome || '' }); };
+  RET_EXT.forEach(i => addSai('ext', i, String(i.n))); RET_HID.forEach(i => addSai('hid', i, i._key));
+  const ord = (a, b) => b.data.localeCompare(a.data) || a.item.localeCompare(b.item, 'pt-BR', { numeric: true });
+  return { ent: ent.sort(ord), sai: sai.sort(ord) };
+}
+function renderMovInv() {
+  const M = movimentosInv(), sel = $('#iv-mov-per');
+  const meses = [...new Set([...M.ent, ...M.sai].map(x => x.data.slice(0, 7)).filter(Boolean))].sort().reverse();
+  sel.innerHTML = '<option value="">Todo o período</option>' + meses.map(m => `<option value="${m}">${(n => n.charAt(0).toUpperCase() + n.slice(1))(nomeMesYm(m))}</option>`).join('');
+  sel.value = meses.includes(IVM.per) ? IVM.per : '';
+  const per = sel.value, f = l => !per || l.data.startsWith(per), E = M.ent.filter(f), Sx = M.sai.filter(f);
+  $('#iv-mov-tab').innerHTML = `<button type="button" data-m="ent"${IVM.aba === 'ent' ? ' class="ativo"' : ''}>Entraram (${nBR(E.length)})</button><button type="button" data-m="sai"${IVM.aba === 'sai' ? ' class="ativo"' : ''}>Saíram (${nBR(Sx.length)})</button>`;
+  $('#iv-mov-tab').querySelectorAll('button').forEach(b => b.onclick = () => { IVM.aba = b.dataset.m; renderMovInv(); });
+  const L = IVM.aba === 'ent' ? E : Sx;
+  $('#iv-mov-c').textContent = IVM.aba === 'ent' ? 'Origem' : 'Motivo';
+  $('#iv-mov-nota').textContent = IVM.aba === 'ent' ? 'Equipamentos que não estavam no inventário e foram incluídos (pelas planilhas de campo ou pela atualização do inventário).' : 'Equipamentos retirados do controle (não constam mais na planilha, retirados da área, baixados…). Use "Voltar ao controle" se foi engano.';
+  const ok = podeRetirar();
+  $('#iv-mov-tb').innerHTML = L.length ? L.map((l, i) => `<tr><td class="num nowrap">${l.data ? fmt(l.data) : '—'}</td><td class="nowrap"><strong>${esc(l.item)}</strong> <span class="muted">· ${l.t === 'ext' ? 'Extintor' : 'Hidrante'}</span>${l.retirado ? ' ' + chip('sem', 'retirado depois') : ''}</td><td class="nowrap">${esc(l.tipo)}</td><td>${esc(l.onde)}</td><td>${esc(l.grupo || '—')}</td><td style="font-size:13px">${esc(l.motivo)}</td><td>${esc(l.quem || '—')}</td><td>${ok && IVM.aba === 'sai' ? `<button class="btn small" type="button" data-volta="${i}">Voltar ao controle</button>` : ok && IVM.aba === 'ent' && l.it && !l.retirado ? `<button class="btn small" type="button" data-ret="${i}">Retirar</button>` : ''}</td></tr>`).join('') : `<tr><td colspan="8"><div class="bi-empty">${IVM.aba === 'ent' ? 'Nenhum equipamento entrou' : 'Nenhum equipamento saiu'} no período.</div></td></tr>`;
+  $('#iv-mov-tb').querySelectorAll('[data-volta],[data-ret]').forEach(b => b.onclick = async () => {
+    const volta = b.dataset.volta !== undefined, l = L[+(volta ? b.dataset.volta : b.dataset.ret)];
+    if (b.dataset.c !== '1') { b.dataset.c = '1'; b.textContent = 'Confirmar'; return; }
+    b.disabled = true;
+    try { const it = l.it, t = l.t, chave = t === 'ext' ? String(it.n) : it._key; await gravarRetirada(t, chave, it, !volta, volta ? 'Voltou ao controle' : 'Retirado do controle', 'Pela aba Entradas e saídas'); montar(); renderTudo(); toast(l.item + (volta ? ' voltou ao controle.' : ' retirado do controle.')); }
+    catch (e) { b.disabled = false; toast('Não foi possível salvar.'); }
+  });
+  IVM.lista = L;
+}
 async function abrirInv() { if (!window.d3 && !biD3Falhou) { try { await carregarD3(); } catch (e) { biD3Falhou = true; } } renderInv(); }
-$('#iv-st').querySelectorAll('button').forEach(b => b.onclick = () => { IV.st = b.dataset.s; renderInv(); });
+$('#iv-st').querySelectorAll('button').forEach(b => b.onclick = () => { if (b.dataset.s === 'mov') { $('#iv-mov').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; } IV.st = b.dataset.s; renderInv(); });
+$('#iv-mov-per').addEventListener('change', () => { IVM.per = $('#iv-mov-per').value; renderMovInv(); });
+$('#iv-mov-csv').onclick = () => copiar([['Data', 'Item', 'Equipamento', 'Tipo', 'Local / localização', 'Grupo', IVM.aba === 'ent' ? 'Origem' : 'Motivo', 'Quem'], ...(IVM.lista || []).map(l => [fmt(l.data), l.item, l.t === 'ext' ? 'Extintor' : 'Hidrante', l.tipo, l.onde, l.grupo, l.motivo, l.quem])].map(x => x.map(csvCell).join(';')).join('\n'));
 $('#iv-onde').querySelectorAll('button').forEach(b => b.onclick = () => { IV.onde = b.dataset.o; renderInv(); });
 ['iv-q', 'iv-eq', 'iv-tipo', 'iv-grupo', 'iv-geral', 'iv-area', 'iv-loc', 'iv-local', 'iv-men', 'iv-mot'].forEach(id => $('#' + id).addEventListener('input', () => renderInv()));
 ['#iv-feed', '#iv-tb'].forEach(sel => $(sel).addEventListener('click', e => { const b = e.target.closest('.ac-lk'); if (!b) return; IV.localSel = b.dataset.local; IV.onde = 'local'; renderInv(); $('#area-invent').scrollIntoView({ behavior: 'smooth' }); }));
