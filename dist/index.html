@@ -1126,6 +1126,13 @@ function montar() {
   HID = [...BASE_HID, ...novosH].map((b, i) => { const it = { ...b, _idx: i, _key: chaveHid(b) }; const a = AJ.hid[it._key]; if (vale(a)) { ['teste1', 'teste2', 'm1', 'm2', 'fab1', 'fab2'].forEach(f => { if (a[f]) it[f] = a[f]; }); if (a.retirado) { it._retirado = a.retirado; it._retMotivo = a.retiradoMotivo || ''; } } return it; });
   EXT.forEach(it => { it._status = statusExt(it); it._grupo = SEED.gExt[it.n] || it._novo || ''; });
   HID.forEach(it => { [1, 2].forEach(k => { const st = statusData(vencMang(it['teste' + k])); if (st) it['m' + k] = st; }); it._status = statusHid(it); it._grupo = SEED.gHid[String(it.tag) + '|' + norm(it.local)] || it._novo || ''; });
+  { const gc = {}; EXT.forEach(i => { if (i._grupo && i.cod) { const o = gc[i.cod] = gc[i.cod] || {}; o[i._grupo] = (o[i._grupo] || 0) + 1; } });
+    const gp = {}; EXT.forEach(i => { const p = String(i.tag).split('/')[0]; if (i._grupo && p) { const o = gp[p] = gp[p] || {}; o[i._grupo] = (o[i._grupo] || 0) + 1; } });
+    const top = o => o ? Object.keys(o).sort((a, b) => o[b] - o[a])[0] : '';
+    const gar = {}; EXT.forEach(i => { if (i._grupo && i.area) { const o = gar[norm(i.area)] = gar[norm(i.area)] || {}; o[i._grupo] = (o[i._grupo] || 0) + 1; } });
+    EXT.forEach(i => { if (!i._grupo) i._grupo = top(gc[i.cod]) || top(gp[String(i.tag).split('/')[0]]) || top(gar[norm(i.area)]) || ''; });
+    const ga = {}; HID.forEach(i => { if (i._grupo && i.area) { const o = ga[norm(i.area)] = ga[norm(i.area)] || {}; o[i._grupo] = (o[i._grupo] || 0) + 1; } });
+    HID.forEach(i => { if (!i._grupo) i._grupo = top(ga[norm(i.area)]) || ''; }); }
   ALL_EXT = EXT; ALL_HID = HID;
   RET_EXT = EXT.filter(i => i._retirado); RET_HID = HID.filter(i => i._retirado);
   EXT = EXT.filter(i => !i._retirado); HID = HID.filter(i => !i._retirado);
@@ -1855,7 +1862,11 @@ function lerAba(ws, achar) {
 function parserExt(cab) {
   const idx = k => cab.findIndex(c => c.startsWith(k));
   const nIs = cab.map((c, i) => c === 'n' ? i : -1).filter(i => i >= 0);
-  if (nIs.length < 2 || idx('tipo') < 0) return null;
+  if (!nIs.length || idx('tipo') < 0) return null;
+  if (nIs.length === 1) { // modelo sem o Nº interno: o único "Nº" é a identificação de campo (111/01); o Nº interno é ligado depois
+    const c = { cod: idx('codplanilha'), geral: idx('geral'), area: cab.indexOf('area'), local: cab.indexOf('local'), localizacao: idx('localizacao'), tag: nIs[0], tipo: idx('tipo'), fab: idx('nfabrica'), recarga: idx('ultimarecarga'), teste: idx('ultimoteste') };
+    return row => { if (row[c.tag] == null || row[c.tag] === '') return null; return ['', txt(row[c.cod]), txt(row[c.geral]), txt(row[c.area]), txt(row[c.local]), txt(row[c.localizacao]), txt(row[c.tag]), txt(row[c.tipo]), txt(row[c.fab]), dataIso(row[c.recarga]), dataIso(row[c.teste])]; };
+  }
   const c = { n: nIs[0], cod: idx('codplanilha'), geral: idx('geral'), area: cab.indexOf('area'), local: cab.indexOf('local'), localizacao: idx('localizacao'), tag: nIs[1], tipo: idx('tipo'), fab: idx('nfabrica'), recarga: idx('ultimarecarga'), teste: idx('ultimoteste') };
   return row => { if (row[c.n] == null || row[c.n] === '') return null; return [txt(row[c.n]), txt(row[c.cod]), txt(row[c.geral]), txt(row[c.area]), txt(row[c.local]), txt(row[c.localizacao]), txt(row[c.tag]), txt(row[c.tipo]), txt(row[c.fab]), dataIso(row[c.recarga]), dataIso(row[c.teste])]; };
 }
@@ -1863,7 +1874,8 @@ function parserHid(cab) {
   if (!cab.includes('tag') || !cab.includes('geral')) return null;
   const idx = k => cab.findIndex(c => c.startsWith(k));
   const testes = cab.map((c, i) => c.startsWith('teste') ? i : -1).filter(i => i >= 0);
-  const c = { geral: cab.indexOf('geral'), area: cab.indexOf('area'), local: cab.indexOf('local'), tag: cab.indexOf('tag'), hidrante: cab.indexOf('hidrante'), abrigos: idx('abrigo'), qtd: idx('qnd'), tamanho: idx('tamanho'), t1: testes[0], t2: testes[1], m1: cab.indexOf('mangueira1'), m2: cab.indexOf('mangueira2') };
+  const jLz = idx('localizacao');
+  const c = { geral: cab.indexOf('geral'), area: cab.indexOf('area'), local: jLz >= 0 ? jLz : cab.indexOf('local'), tag: cab.indexOf('tag'), hidrante: cab.indexOf('hidrante'), abrigos: idx('abrigo'), qtd: idx('qnd'), tamanho: idx('tamanho'), t1: testes[0], t2: testes[1], m1: cab.indexOf('mangueira1'), m2: cab.indexOf('mangueira2') };
   return row => { if ([c.geral, c.area, c.local, c.tag].every(i => row[i] == null || row[i] === '')) return null; return [txt(row[c.geral]), txt(row[c.area]), txt(row[c.local]), txt(row[c.tag]), txt(row[c.hidrante]), txt(row[c.abrigos]), parseInt(row[c.qtd]) || 0, txt(row[c.tamanho]), dataIso(row[c.t1]), dataIso(row[c.t2]), txt(row[c.m1]), txt(row[c.m2])]; };
 }
 $('#file-import').addEventListener('change', async e => {
@@ -1878,6 +1890,11 @@ $('#file-import').addEventListener('change', async e => {
       else if (k.includes('hidrante')) nh = lerAba(wb.Sheets[nm], parserHid) || nh;
     });
     if (!ne && !nh) throw new Error('Não encontrei as abas "Inventário - Extintor" ou "Inventário - Hidrantes" nesta planilha.');
+    if (ne && ne.some(l => !l[0])) { // liga cada extintor ao Nº interno já existente (inspeções, grupos e ajustes continuam valendo)
+      const base = [...BASE_EXT, ...SEED.ext.map(r => toObj(r, EXT_F))], porChave = new Map(), porTag = new Map(), usados = new Set();
+      base.forEach(b => { const k = String(b.tag).trim() + '|' + norm(b.localizacao); if (!porChave.has(k)) porChave.set(k, String(b.n)); const t = String(b.tag).trim(); porTag.set(t, porTag.has(t) && porTag.get(t) !== String(b.n) ? null : String(b.n)); });
+      ne.forEach(l => { if (l[0]) return; const t = String(l[6]).trim(); let n = porChave.get(t + '|' + norm(l[5])); if (!n || usados.has(n)) n = porTag.get(t) && !usados.has(porTag.get(t)) ? porTag.get(t) : null; if (!n) { n = idNovoExt(t); if (usados.has(n)) n = n + '_' + hashKey(norm(l[5])); } usados.add(n); l[0] = n; });
+    }
     const ext = ne && ne.length ? ne : BASE_EXT.map(o => EXT_F.map(k => o[k]));
     const hid = nh && nh.length ? nh : BASE_HID.map(o => HID_F.map(k => o[k]));
     toast('Enviando planilha…');
