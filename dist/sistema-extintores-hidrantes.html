@@ -3086,6 +3086,7 @@ function carregarScript(src) { return new Promise((ok, no) => { const s = docume
 async function carregarJSZip() { if (!window.JSZip) await carregarScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'); return window.JSZip; }
 const NS_X = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main', NS_R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const colNum = c => c.split('').reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0);
+const colLetra = n => { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
 const refParts = r => { const m = /^([A-Z]+)(\d+)$/.exec(r); return m ? [m[1], +m[2]] : [null, 0]; };
 const serialDe = iso => (Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) - Date.UTC(1899, 11, 30)) / 864e5;
 const isoDeSerial = n => new Date(Date.UTC(1899, 11, 30) + Math.round(+n) * 864e5).toISOString().slice(0, 10);
@@ -3185,7 +3186,7 @@ async function gerarPlanilhaMes(file, ym, opc) {
     const limparMarcas = (r, colsMarca) => { if (!opc.limpar) return; colsMarca.forEach(col => { const c = cel.get(col + r); const t = String(val(c)).trim().toUpperCase(); if (['C', 'NC', 'NV', 'SA', 'X'].includes(t)) { limpar(c); res.limpas++; } }); };
     if (hdrExt) {
       const [hr, l] = hdrExt, col = f => (l.find(([, t]) => f(t)) || [])[0];
-      const cN = col(t => t === 'nº' || t === 'n°' || t === 'no'), cL = col(t => t.startsWith('localiza')), cT = col(t => t === 'tipo / capacidade'), cF = col(t => t.includes('fabrica')), cR = col(t => t.includes('recarga')), cH = col(t => t.startsWith('último teste') || t.startsWith('ultimo teste')), cNE = col(t => t.startsWith('não encontrado') || t.startsWith('nao encontrado'));
+      const cL0 = col(t => t.startsWith('localiza')), cN = col(t => t === 'nº' || t === 'n°' || t === 'no') || (cL0 && colNum(cL0) > 1 ? colLetra(colNum(cL0) - 1) : null), cL = cL0, cT = col(t => t === 'tipo / capacidade'), cF = col(t => t.includes('fabrica')), cR = col(t => t.includes('recarga')), cH = col(t => t.startsWith('último teste') || t.startsWith('ultimo teste')), cNE = col(t => t.startsWith('não encontrado') || t.startsWith('nao encontrado'));
       if (!cN) continue;
       const colsMarca = l.map(([c]) => c).filter(c => colNum(c) > colNum(cH || cR || cF || 'A'));
       blocos = [];
@@ -3869,6 +3870,8 @@ function lerFolhaExtintor(nome, rows) {
   const cab = lerCabecalhoFolha(rows), bcs = lerRodapeFolha(rows);
   let hi = -1, cn = -1;
   rows.slice(0, 15).forEach((r, i) => { if (hi < 0) { const j = (r || []).findIndex(c => typeof c === 'string' && c.trim() === 'Nº'); if (j >= 0 && (r || []).some(c => /tipo/i.test(String(c || '')))) { hi = i; cn = j; } } });
+  // folha sem o título "Nº" na primeira coluna: o número fica na coluna antes de "Localização"
+  if (hi < 0) rows.slice(0, 15).forEach((r, i) => { if (hi < 0 && (r || []).some(c => /tipo\s*\/\s*capacidade/i.test(String(c || '')))) { const jl = (r || []).findIndex(c => /^localiza/i.test(semAcento(String(c || '')).trim())); if (jl > 0) { hi = i; cn = jl - 1; } } });
   if (hi < 0) return null;
   const h = rows[hi].map(c => chaveCab(c));
   const mapa = {}; ITENS_EXT.forEach(t => { const j = h.indexOf(chaveCab(t)); if (j >= 0) mapa['g:' + t] = j; });
