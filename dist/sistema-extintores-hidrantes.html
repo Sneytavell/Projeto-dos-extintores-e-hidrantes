@@ -1930,7 +1930,7 @@ async function garantirAdminInicial() {
   } catch (e) { console.warn('admin inicial', e); }
 }
 async function iniciar() {
-  if (window.SITE_FORA_DO_AR) return; // site desligado (tela 404 em site-status.js)
+  if (window.SITE_FORA_DO_AR && !window.SITE_ADM_LIVRE) return; // site desligado (tela 404); o administrador entra pelo link com ?adm
   if (USA_FIREBASE && !SNAP) {
     try {
       const fb = await iniciarFirebase();
@@ -2026,6 +2026,12 @@ function atualizarNomeTopo() {
   $('#user-ini').hidden = !$('#user-avatar').hidden;
 }
 function entrarApp() {
+  // site "fora do ar": só o administrador entra; os demais voltam para a tela 404
+  if (window.SITE_FORA_DO_AR) {
+    const adm = SESSAO?.pessoaId && PESSOAS[SESSAO.pessoaId]?.papel === 'admin';
+    if (!adm) { try { localStorage.removeItem('exh-adm-livre'); } catch (e) {} SESSAO = null; gravarSessao(null); document.documentElement.classList.add('fora-do-ar'); document.title = 'Página não encontrada'; return; }
+    try { localStorage.setItem('exh-adm-livre', '1'); } catch (e) {}
+  }
   APP_ABERTO = true; AREAS_SIG = '?';
   if (SESSAO?.pessoaId) EU.nome = PESSOAS[SESSAO.pessoaId]?.nome || EU.nome;
   $('#btn-sair').hidden = S.modo === 'local';

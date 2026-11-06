@@ -34,4 +34,11 @@ html.fora-do-ar #fora-do-ar{display:grid;place-items:center;position:fixed;inset
     <button class="fda-btn" type="button" onclick="location.reload()">Tentar novamente</button>
   </div>
 </div>
-<script>if (window.SITE_FORA_DO_AR) { document.documentElement.classList.add('fora-do-ar'); document.title = 'Página não encontrada'; }</script>
+<script>
+// Com o site "fora do ar", só o administrador entra: pelo link com ?adm (ou neste aparelho, depois de entrar como administrador uma vez)
+if (window.SITE_FORA_DO_AR) {
+  var livre = /[?#&]adm\b/.test(location.search + location.hash); try { livre = livre || localStorage.getItem('exh-adm-livre') === '1'; } catch (e) {}
+  window.SITE_ADM_LIVRE = livre;
+  if (!livre) { document.documentElement.classList.add('fora-do-ar'); document.title = 'Página não encontrada'; }
+}
+</script>
