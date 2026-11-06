@@ -1930,6 +1930,7 @@ async function garantirAdminInicial() {
   } catch (e) { console.warn('admin inicial', e); }
 }
 async function iniciar() {
+  if (window.SITE_FORA_DO_AR) return; // site desligado (tela 404 em site-status.js)
   if (USA_FIREBASE && !SNAP) {
     try {
       const fb = await iniciarFirebase();

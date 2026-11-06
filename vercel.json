@@ -1,7 +1,7 @@
 {
   "framework": null,
   "installCommand": "",
-  "buildCommand": "cp firebase-config.js dist/firebase-config.js",
+  "buildCommand": "cp firebase-config.js dist/firebase-config.js && cp site-status.js dist/site-status.js",
   "outputDirectory": "dist",
   "cleanUrls": true
 }
