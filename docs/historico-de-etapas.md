@@ -331,3 +331,4 @@ Nova aba "Cronograma" (todos veem; só admin cria/atribui):
 - (v72) Planilhas de campo cuja primeira coluna está sem o título "Nº" (ex.: aba 213/02) agora são lidas: o número é a coluna antes de "Localização" (importação de campo, meses anteriores, atualizar inventário e gerar planilhas).
 - (v73) Inventário: "Entradas e saídas do controle" — Entraram (itens incluídos pelas planilhas, com data, origem e quem) e Saíram (retirados, com motivo e quem), filtro por mês, Retirar / Voltar ao controle e Copiar CSV; atalho "↕ Entradas e saídas" nas abas.
 - (v74) Site (Vercel): tela "404 · Página não encontrada" animada (glitch), ligada/desligada só pelo arquivo site-status.js (window.SITE_FORA_DO_AR); quando ligada o sistema não abre. Começa desligada. Não afeta a versão do Claude.
+- 06/11/2026: tela 404 LIGADA (site fora do ar).
